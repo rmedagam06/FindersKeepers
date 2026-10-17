@@ -714,7 +714,8 @@ button:focus-visible {
     overflow: visible;
   }
 
-  .map-card {
+  .map-card,
+  .leaflet-shell {
     grid-column: 2;
     grid-row: 2 / 5;
     min-height: min(68vh, 690px);
