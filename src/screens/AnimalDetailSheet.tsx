@@ -4,17 +4,21 @@ import { Button } from '@/components/ui/Button'
 import { AnimalArt } from '@/components/ui/AnimalArt'
 import { RarityBadge } from '@/components/ui/Badge'
 import { XPBar } from '@/components/ui/XPBar'
+import { AchievementUnlockNotice } from '@/components/ui/AchievementUnlockNotice'
 import { getSpeciesById } from '@/data/species'
 import { useCollectionStore } from '@/store/useCollectionStore'
 import { isReadyToEvolve } from '@/lib/game/xp'
-import type { AnimalInstance } from '@/types/models'
+import { useAchievementCheck } from '@/lib/game/useAchievementCheck'
+import type { Achievement, AnimalInstance } from '@/types/models'
 
 export function AnimalDetailSheet({ animal, onClose }: { animal: AnimalInstance; onClose: () => void }) {
   const species = getSpeciesById(animal.speciesId)
   const setNickname = useCollectionStore((state) => state.setNickname)
   const evolveAnimal = useCollectionStore((state) => state.evolveAnimal)
+  const checkAchievements = useAchievementCheck()
   const [nicknameDraft, setNicknameDraft] = useState(animal.nickname ?? '')
   const [justEvolved, setJustEvolved] = useState(false)
+  const [newAchievements, setNewAchievements] = useState<Achievement[]>([])
 
   if (!species) return null
 
@@ -24,6 +28,7 @@ export function AnimalDetailSheet({ animal, onClose }: { animal: AnimalInstance;
   function handleEvolve() {
     if (!evolvesToId) return
     evolveAnimal(animal.id, evolvesToId)
+    setNewAchievements(checkAchievements())
     setJustEvolved(true)
   }
 
@@ -46,7 +51,12 @@ export function AnimalDetailSheet({ animal, onClose }: { animal: AnimalInstance;
         onBlur={() => setNickname(animal.id, nicknameDraft.trim() || null)}
       />
 
-      {justEvolved && <p className="auth-subtitle">Whoa — they evolved!</p>}
+      {justEvolved && (
+        <>
+          <p className="auth-subtitle">Whoa — they evolved!</p>
+          <AchievementUnlockNotice achievements={newAchievements} />
+        </>
+      )}
 
       {readyToEvolve && !justEvolved && (
         <div className="auth-actions">

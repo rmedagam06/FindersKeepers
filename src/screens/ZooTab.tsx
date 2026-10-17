@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { useCollectionStore } from '@/store/useCollectionStore'
 import { getSpeciesById } from '@/data/species'
 import { AnimalArt } from '@/components/ui/AnimalArt'
+import { useAchievementCheck } from '@/lib/game/useAchievementCheck'
 
 const ZOO_COLUMNS = 3
 const ZOO_ROWS = 3
@@ -11,7 +12,15 @@ export function ZooTab() {
   const user = useAppStore((state) => state.user)
   const allAnimals = useCollectionStore((state) => state.animals)
   const placeInZoo = useCollectionStore((state) => state.placeInZoo)
+  const checkAchievements = useAchievementCheck()
   const [selectedForPlacement, setSelectedForPlacement] = useState<string | null>(null)
+  const [unlockToast, setUnlockToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!unlockToast) return
+    const timer = setTimeout(() => setUnlockToast(null), 2600)
+    return () => clearTimeout(timer)
+  }, [unlockToast])
 
   const myAnimals = allAnimals.filter((animal) => animal.userId === user?.id)
   const unplaced = myAnimals.filter((animal) => animal.zooPosition === null)
@@ -33,6 +42,8 @@ export function ZooTab() {
     if (selectedForPlacement) {
       placeInZoo(selectedForPlacement, { x, y })
       setSelectedForPlacement(null)
+      const unlocked = checkAchievements()
+      if (unlocked.length > 0) setUnlockToast(`Achievement unlocked: ${unlocked.map((a) => a.name).join(', ')}!`)
     }
   }
 
@@ -90,6 +101,8 @@ export function ZooTab() {
           </div>
         </div>
       </div>
+
+      {unlockToast && <p className="toast">{unlockToast}</p>}
     </>
   )
 }

@@ -1,0 +1,31 @@
+import type { AnimalInstance, Friendship, Visit } from '@/types/models'
+
+export interface AchievementContext {
+  animals: AnimalInstance[]
+  visits: Visit[]
+  friendships: Friendship[]
+}
+
+function countDistinctVisitDays(visits: Visit[]): number {
+  const days = new Set(visits.map((visit) => new Date(visit.timestamp).toDateString()))
+  return days.size
+}
+
+/**
+ * Pure achievement rules — no store/UI access, same pattern as claimVisit.ts.
+ * `alreadyUnlocked` filters out ids already granted so repeated checks don't
+ * re-evaluate work that's already done; returns only the NEWLY qualifying ids.
+ */
+export function evaluateAchievements(context: AchievementContext, alreadyUnlocked: Set<string>): string[] {
+  const qualifies: Record<string, boolean> = {
+    'first-catch': context.animals.length >= 1,
+    'first-evolution': context.animals.some((animal) => animal.stage === 2),
+    'three-day-explorer': countDistinctVisitDays(context.visits) >= 3,
+    'made-a-friend': context.friendships.length >= 1,
+    'zoo-curator': context.animals.filter((animal) => animal.zooPosition !== null).length >= 5,
+  }
+
+  return Object.entries(qualifies)
+    .filter(([id, qualifies_]) => qualifies_ && !alreadyUnlocked.has(id))
+    .map(([id]) => id)
+}

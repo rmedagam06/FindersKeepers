@@ -1324,3 +1324,48 @@ button:focus-visible {
 .friend-row:hover {
   background: #f2eec0;
 }
+
+/* ===== Achievements ===== */
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 12px;
+  margin: 8px 0 14px;
+}
+
+.achievement-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.achievement-badge__art--locked {
+  filter: grayscale(1);
+  opacity: 0.35;
+}
+
+.achievement-badge__name {
+  color: #3f466f;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.achievement-unlock {
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgb(113 188 183 / 16%);
+}
+
+.achievement-unlock__label {
+  margin: 0 0 8px;
+  color: #3f466f;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}

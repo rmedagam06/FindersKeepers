@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { AchievementUnlockNotice } from '@/components/ui/AchievementUnlockNotice'
 import { useAppStore } from '@/store/useAppStore'
 import { useFriendsStore } from '@/store/useFriendsStore'
+import { useAchievementCheck } from '@/lib/game/useAchievementCheck'
 import { DEMO_FRIEND_CODE, DEMO_FRIEND_ID, DEMO_FRIEND_NAME } from '@/data/demoFriend'
+import type { Achievement } from '@/types/models'
 
 export function friendDisplayName(friendId: string): string {
   if (friendId === DEMO_FRIEND_ID) return DEMO_FRIEND_NAME
@@ -20,8 +23,10 @@ export function FriendsSheet({
   const user = useAppStore((state) => state.user)
   const friendships = useFriendsStore((state) => state.friendships)
   const addFriendByCode = useFriendsStore((state) => state.addFriendByCode)
+  const checkAchievements = useAchievementCheck()
   const [codeInput, setCodeInput] = useState('')
   const [message, setMessage] = useState<string | null>(null)
+  const [newAchievements, setNewAchievements] = useState<Achievement[]>([])
 
   if (!user) return null
   const userId = user.id
@@ -31,7 +36,10 @@ export function FriendsSheet({
   function handleAdd() {
     const result = addFriendByCode(userId, codeInput)
     setMessage(result.message)
-    if (result.ok) setCodeInput('')
+    if (result.ok) {
+      setCodeInput('')
+      setNewAchievements(checkAchievements())
+    }
   }
 
   return (
@@ -51,6 +59,7 @@ export function FriendsSheet({
         </Button>
       </div>
       {message && <p className="auth-subtitle">{message}</p>}
+      <AchievementUnlockNotice achievements={newAchievements} />
 
       <div className="friends-list">
         {myFriends.length === 0 && (

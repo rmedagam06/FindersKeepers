@@ -3,14 +3,16 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { AnimalArt } from '@/components/ui/AnimalArt'
 import { RarityBadge } from '@/components/ui/Badge'
+import { AchievementUnlockNotice } from '@/components/ui/AchievementUnlockNotice'
 import { categoryMeta } from '@/data/locationCategories'
 import { SPECIES_CATALOG } from '@/data/species'
 import { claimVisit } from '@/lib/game/claimVisit'
+import { useAchievementCheck } from '@/lib/game/useAchievementCheck'
 import { useAppStore } from '@/store/useAppStore'
 import { useLocationsStore } from '@/store/useLocationsStore'
 import { useCollectionStore } from '@/store/useCollectionStore'
 import { useVisitsStore } from '@/store/useVisitsStore'
-import type { SavedLocation, Species } from '@/types/models'
+import type { Achievement, SavedLocation, Species } from '@/types/models'
 
 type ViewState =
   | { step: 'idle' }
@@ -33,8 +35,10 @@ export function LocationVisitSheet({ location, onClose }: { location: SavedLocat
   const grantXp = useCollectionStore((state) => state.grantXp)
   const logVisit = useVisitsStore((state) => state.logVisit)
   const countManualVisitsThisWeek = useVisitsStore((state) => state.countManualVisitsThisWeek)
+  const checkAchievements = useAchievementCheck()
 
   const [view, setView] = useState<ViewState>({ step: 'idle' })
+  const [newAchievements, setNewAchievements] = useState<Achievement[]>([])
 
   function resolveClaim(method: 'gps' | 'manual', coords: { lat: number; lng: number } | null) {
     if (!user) return
@@ -57,10 +61,12 @@ export function LocationVisitSheet({ location, onClose }: { location: SavedLocat
     if (result.kind === 'catch') {
       const instance = catchAnimal({ userId: user.id, speciesId: result.species.id, sourceLocationId: location.id })
       logVisit({ userId: user.id, locationId: location.id, method, rewardGranted: { type: 'catch', refId: instance.id } })
+      setNewAchievements(checkAchievements())
       setView({ step: 'caught', species: result.species })
     } else {
       grantXp(result.animalInstanceId, result.xpGained)
       logVisit({ userId: user.id, locationId: location.id, method, rewardGranted: { type: 'xp', refId: result.animalInstanceId } })
+      setNewAchievements(checkAchievements())
       setView({ step: 'xp', amount: result.xpGained })
     }
   }
@@ -108,6 +114,7 @@ export function LocationVisitSheet({ location, onClose }: { location: SavedLocat
             <AnimalArt speciesId={view.species.assetKey} speciesName={view.species.name} stage={1} size={120} />
           </div>
           <h2 className="sheet-title">You found a {view.species.name}!</h2>
+          <AchievementUnlockNotice achievements={newAchievements} />
           <Button variant="primary" onClick={onClose}>
             Nice!
           </Button>
@@ -118,6 +125,7 @@ export function LocationVisitSheet({ location, onClose }: { location: SavedLocat
         <>
           <h2 className="sheet-title">+{view.amount} XP</h2>
           <p className="auth-subtitle">Your companion here grew a little stronger.</p>
+          <AchievementUnlockNotice achievements={newAchievements} />
           <Button variant="primary" onClick={onClose}>
             Nice!
           </Button>
