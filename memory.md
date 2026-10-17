@@ -50,13 +50,20 @@ src/
   data/
     species.ts             — V1 species catalog (6 species × 2 stages: panda, bear, fox, owl, bunny, otter)
     locationCategories.ts  — category → label/color map (gym, work, school, coffee, library, club, custom)
+    game/claimVisit.ts      — pure reward-claim rules: cooldown + distance + manual-rate-limit gates,
+                              first-visit catch vs. repeat-visit XP, no store/UI access (see below)
   store/
     useAppStore.ts          — zustand+persist: current user, avatar, permission state, onboarding flags
-    useLocationsStore.ts    — zustand+persist: saved location pins (localStorage only, no backend yet)
+    useLocationsStore.ts    — zustand+persist: saved location pins + claimLocation(id) (sets lastClaimedAt)
+    useCollectionStore.ts   — zustand+persist: owned AnimalInstance[]; catchAnimal(), grantXp() (recomputes level)
+    useVisitsStore.ts       — zustand+persist: Visit[] audit log; logVisit(), countManualVisitsThisWeek()
   components/ui/            — design system: Button, Card, Badge, Modal, XPBar, AnimalArt (has
                               graceful fallback to initial-letter badge when art is missing), CompassMark
   screens/                  — SplashScreen, SignInScreen, AvatarPickScreen, PermissionIntroScreen,
-                              HomeMapScreen (Leaflet map + pin dropping), AddLocationSheet, ProfileSheet
+                              HomeMapScreen (Leaflet map + pin dropping + pin tap → check-in),
+                              AddLocationSheet, ProfileSheet, LocationVisitSheet (the check-in modal:
+                              idle → checking → caught/xp/blocked states, calls claimVisit then applies
+                              the result to useLocationsStore/useCollectionStore/useVisitsStore)
   assets/
     animals/panda/stage-{1,2}.svg   — only species with real art so far (proves the asset pipeline)
     avatars/avatar-{1..6}.svg       — 6 original 2016-nostalgic chibi avatars
@@ -82,11 +89,17 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
 - **Phase 1 (done)**: auth screen (guest works now, Google gated on Firebase), avatar picker,
   location-permission intro, real Leaflet+OSM map with tap-to-drop categorized pins (local storage
   only — no Firestore yet)
-- **Phase 2 (next)**: core reward loop — `claimVisit` logic connecting `lib/game/*` to the map
-  (arrival check → catch modal → animal instance), needs Firestore once Firebase config arrives
-  (or can stub locally first, same pattern as useLocationsStore)
-- **Phase 3+**: Collection/Zoo screens (bottom-nav tabs already stubbed as "coming soon"), 5 more
-  species' art, friends/social, achievements — see plan file for full roadmap
+- **Phase 2 (done)**: core reward loop end-to-end — tap a pin → "Check in" → GPS check (falls back
+  to manual "I'm here" if denied/unavailable, rate-limited to 2/week) → first visit at a location
+  = guaranteed catch (rarity-weighted roll from that category's species pool), repeat visit after
+  the 4h cooldown = +50 XP to that location's "buddy" animal. All local-only for now (same
+  localStorage pattern as Phase 1); swapping in a Cloud Function later means moving `claimVisit`'s
+  call site server-side and re-validating there — the pure function itself doesn't change.
+- **Phase 3 (next)**: Collection ("Creature-dex") + Animal Detail (XP bar, Evolve CTA at level 3) +
+  Zoo placement grid (bottom-nav tabs currently stubbed as "coming soon" — wire them here). Also
+  the point to fill in the other 5 species' art (bear, fox, owl, bunny, otter).
+- **Phase 4+**: friends/social (read-only zoo visits, opt-in pin visibility, co-visit XP bonus),
+  achievements, push notifications — see plan file for full roadmap
 
 ## Known gaps / follow-ups flagged to user
 - Only panda has real SVG art; other 5 species (bear, fox, owl, bunny, otter) fall back to
