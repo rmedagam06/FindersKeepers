@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
-import { CompassMark } from '@/components/ui/CompassMark'
 import { useAppStore } from '@/store/useAppStore'
 import { useLocationsStore } from '@/store/useLocationsStore'
 import { categoryMeta } from '@/data/locationCategories'
 import { AddLocationSheet } from './AddLocationSheet'
-import { ProfileSheet } from './ProfileSheet'
 import { LocationVisitSheet } from './LocationVisitSheet'
 import type { LocationCategory, SavedLocation } from '@/types/models'
 
@@ -47,7 +45,7 @@ function RecenterMap({ center }: { center: [number, number] }) {
   return null
 }
 
-export function HomeMapScreen() {
+export function ExploreTab() {
   const user = useAppStore((state) => state.user)
   const locationPermission = useAppStore((state) => state.locationPermission)
   const locations = useLocationsStore((state) => state.locations)
@@ -57,8 +55,6 @@ export function HomeMapScreen() {
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null)
   const [isPlacing, setIsPlacing] = useState(false)
   const [pendingCoords, setPendingCoords] = useState<[number, number] | null>(null)
-  const [showProfile, setShowProfile] = useState(false)
-  const [comingSoonTab, setComingSoonTab] = useState<string | null>(null)
   const [visitingLocation, setVisitingLocation] = useState<SavedLocation | null>(null)
 
   useEffect(() => {
@@ -70,26 +66,10 @@ export function HomeMapScreen() {
     })
   }, [locationPermission])
 
-  useEffect(() => {
-    if (!comingSoonTab) return
-    const timer = setTimeout(() => setComingSoonTab(null), 1800)
-    return () => clearTimeout(timer)
-  }, [comingSoonTab])
-
   const myLocations = locations.filter((loc) => loc.userId === user?.id)
 
   return (
-    <section className="app-content" aria-label="Finders Keepers companion map">
-      <header className="top-bar">
-        <div className="brand-lockup">
-          <CompassMark small />
-          <span>Finders Keepers</span>
-        </div>
-        <button className="profile-button" aria-label="Open your profile" onClick={() => setShowProfile(true)}>
-          {user?.displayName.charAt(0) ?? 'FK'}
-        </button>
-      </header>
-
+    <>
       <div className="welcome-copy">
         <p className="eyebrow">Ready to wander?</p>
         <h1>Little companions are waiting nearby.</h1>
@@ -137,28 +117,9 @@ export function HomeMapScreen() {
         />
       )}
 
-      {showProfile && <ProfileSheet onClose={() => setShowProfile(false)} />}
-
       {visitingLocation && (
         <LocationVisitSheet location={visitingLocation} onClose={() => setVisitingLocation(null)} />
       )}
-
-      {comingSoonTab && <p className="toast">{comingSoonTab} is coming in a later build.</p>}
-
-      <nav className="bottom-nav" aria-label="Primary navigation">
-        <button className="nav-item is-active">
-          <span className="nav-symbol nav-symbol--explore" />
-          Explore
-        </button>
-        <button className="nav-item" onClick={() => setComingSoonTab('Collection')}>
-          <span className="nav-symbol nav-symbol--my-finds" />
-          Collection
-        </button>
-        <button className="nav-item" onClick={() => setComingSoonTab('Zoo')}>
-          <span className="nav-symbol nav-symbol--collection" />
-          Zoo
-        </button>
-      </nav>
-    </section>
+    </>
   )
 }

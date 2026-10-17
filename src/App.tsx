@@ -4,7 +4,7 @@ import { SplashScreen } from '@/screens/SplashScreen'
 import { SignInScreen } from '@/screens/SignInScreen'
 import { AvatarPickScreen } from '@/screens/AvatarPickScreen'
 import { PermissionIntroScreen } from '@/screens/PermissionIntroScreen'
-import { HomeMapScreen } from '@/screens/HomeMapScreen'
+import { MainShell } from '@/screens/MainShell'
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -45,7 +45,7 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <HomeMapScreen />
+      <MainShell />
     </main>
   )
 }

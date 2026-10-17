@@ -7,6 +7,9 @@ interface CollectionState {
   animals: AnimalInstance[]
   catchAnimal: (input: { userId: string; speciesId: string; sourceLocationId: string }) => AnimalInstance
   grantXp: (animalInstanceId: string, amount: number) => void
+  evolveAnimal: (animalInstanceId: string, evolvedSpeciesId: string) => void
+  setNickname: (animalInstanceId: string, nickname: string | null) => void
+  placeInZoo: (animalInstanceId: string, position: { x: number; y: number } | null) => void
 }
 
 export const useCollectionStore = create<CollectionState>()(
@@ -35,6 +38,25 @@ export const useCollectionStore = create<CollectionState>()(
             animal.id === animalInstanceId
               ? { ...animal, xp: animal.xp + amount, level: levelForXp(animal.xp + amount) }
               : animal,
+          ),
+        })
+      },
+      evolveAnimal: (animalInstanceId, evolvedSpeciesId) => {
+        set({
+          animals: get().animals.map((animal) =>
+            animal.id === animalInstanceId ? { ...animal, speciesId: evolvedSpeciesId, stage: 2 } : animal,
+          ),
+        })
+      },
+      setNickname: (animalInstanceId, nickname) => {
+        set({
+          animals: get().animals.map((animal) => (animal.id === animalInstanceId ? { ...animal, nickname } : animal)),
+        })
+      },
+      placeInZoo: (animalInstanceId, position) => {
+        set({
+          animals: get().animals.map((animal) =>
+            animal.id === animalInstanceId ? { ...animal, zooPosition: position } : animal,
           ),
         })
       },

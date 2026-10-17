@@ -116,3 +116,12 @@ export const SPECIES_CATALOG: Species[] = [
     assetKey: 'otter',
   },
 ]
+
+/** One entry per species family (the stage-1 row) — used by the Collection
+ * screen to know what's discoverable at all, regardless of which stage a
+ * user's owned instance is currently at. */
+export const SPECIES_FAMILIES: Species[] = SPECIES_CATALOG.filter((species) => species.stage === 1)
+
+export function getSpeciesById(id: string): Species | undefined {
+  return SPECIES_CATALOG.find((species) => species.id === id)
+}
