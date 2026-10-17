@@ -13,6 +13,9 @@ const animalModules = import.meta.glob<{ default: string }>('../assets/animals/*
 const achievementModules = import.meta.glob<{ default: string }>('../assets/achievements/*.svg', {
   eager: true,
 })
+const avatarModules = import.meta.glob<{ default: string }>('../assets/avatars/*.svg', {
+  eager: true,
+})
 
 function buildAnimalManifest(): Record<string, Record<number, string>> {
   const manifest: Record<string, Record<number, string>> = {}
@@ -36,8 +39,20 @@ function buildAchievementManifest(): Record<string, string> {
   return manifest
 }
 
+function buildAvatarManifest(): Record<string, string> {
+  const manifest: Record<string, string> = {}
+  for (const [path, mod] of Object.entries(avatarModules)) {
+    const match = path.match(/avatars\/([^/]+)\.svg$/)
+    if (!match) continue
+    manifest[match[1]] = mod.default
+  }
+  return manifest
+}
+
 export const ANIMAL_ASSETS = buildAnimalManifest()
 export const ACHIEVEMENT_ASSETS = buildAchievementManifest()
+export const AVATAR_ASSETS = buildAvatarManifest()
+export const AVATAR_IDS = Object.keys(AVATAR_ASSETS).sort()
 
 export function getAnimalArt(speciesId: string, stage: 1 | 2): string | undefined {
   return ANIMAL_ASSETS[speciesId]?.[stage]
@@ -45,4 +60,8 @@ export function getAnimalArt(speciesId: string, stage: 1 | 2): string | undefine
 
 export function getAchievementArt(achievementId: string): string | undefined {
   return ACHIEVEMENT_ASSETS[achievementId]
+}
+
+export function getAvatarArt(avatarId: string): string | undefined {
+  return AVATAR_ASSETS[avatarId]
 }
