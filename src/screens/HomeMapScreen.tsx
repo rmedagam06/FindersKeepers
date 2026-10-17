@@ -7,7 +7,8 @@ import { useLocationsStore } from '@/store/useLocationsStore'
 import { categoryMeta } from '@/data/locationCategories'
 import { AddLocationSheet } from './AddLocationSheet'
 import { ProfileSheet } from './ProfileSheet'
-import type { LocationCategory } from '@/types/models'
+import { LocationVisitSheet } from './LocationVisitSheet'
+import type { LocationCategory, SavedLocation } from '@/types/models'
 
 const DEFAULT_CENTER: [number, number] = [40.7128, -74.006]
 
@@ -58,6 +59,7 @@ export function HomeMapScreen() {
   const [pendingCoords, setPendingCoords] = useState<[number, number] | null>(null)
   const [showProfile, setShowProfile] = useState(false)
   const [comingSoonTab, setComingSoonTab] = useState<string | null>(null)
+  const [visitingLocation, setVisitingLocation] = useState<SavedLocation | null>(null)
 
   useEffect(() => {
     if (locationPermission !== 'granted') return
@@ -109,7 +111,12 @@ export function HomeMapScreen() {
           <RecenterMap center={center} />
           {userPosition && <Marker position={userPosition} icon={userIcon()} />}
           {myLocations.map((loc) => (
-            <Marker key={loc.id} position={[loc.lat, loc.lng]} icon={pinIcon(loc.category)} />
+            <Marker
+              key={loc.id}
+              position={[loc.lat, loc.lng]}
+              icon={pinIcon(loc.category)}
+              eventHandlers={{ click: () => !isPlacing && setVisitingLocation(loc) }}
+            />
           ))}
         </MapContainer>
 
@@ -131,6 +138,10 @@ export function HomeMapScreen() {
       )}
 
       {showProfile && <ProfileSheet onClose={() => setShowProfile(false)} />}
+
+      {visitingLocation && (
+        <LocationVisitSheet location={visitingLocation} onClose={() => setVisitingLocation(null)} />
+      )}
 
       {comingSoonTab && <p className="toast">{comingSoonTab} is coming in a later build.</p>}
 

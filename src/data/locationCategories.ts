@@ -6,7 +6,7 @@ export const LOCATION_CATEGORIES: { id: LocationCategory; label: string; color: 
   { id: 'school', label: 'School', color: '#71BCB7' },
   { id: 'coffee', label: 'Coffee', color: '#CEE2B1' },
   { id: 'library', label: 'Library', color: '#98C48D' },
-  { id: 'club', label: 'Club', color: '#F292AA' },
+  { id: 'club', label: 'Club', color: '#3F466F' },
   { id: 'custom', label: 'Custom', color: '#7078A4' },
 ]
 
