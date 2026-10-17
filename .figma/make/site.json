@@ -1,0 +1,11 @@
+{
+  "title": "Finders Keepers",
+  "description": "Collect, raise, and share virtual companions by exploring the real places that matter to you — your gym, your library, your favorite coffee shop.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
