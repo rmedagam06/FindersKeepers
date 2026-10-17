@@ -45,10 +45,18 @@ src/
     game/rarity.ts         — weighted species roll by location category (pure)
     game/claimVisit.ts     — pure reward-claim rules: cooldown + distance + manual-rate-limit gates,
                               first-visit catch vs. repeat-visit XP, no store/UI access
+    game/achievements.ts   — pure evaluateAchievements(context, alreadyUnlocked) — same no-store pattern
+    game/useAchievementCheck.ts — the one hook that bridges that pure fn to the stores; reads via
+                              `.getState()` (not the hook's own reactive values) specifically so it
+                              sees a just-dispatched store update in the same event handler, not a
+                              stale pre-update snapshot. Call check() right after catch/evolve/
+                              friend-add/zoo-place, in the same handler — not in a useEffect.
     assets.ts              — asset-swap manifest pattern (import.meta.glob) for animals,
                               achievements, avatars — components never hardcode a filename
     firebase.ts            — Firebase init, gated on VITE_FIREBASE_* env vars; isFirebaseConfigured flag
     auth.ts                — signInWithGoogle (needs Firebase), createGuestUser (always works, local-only)
+    notifications.ts       — browser Notification API ONLY, not FCM. Can show a notification while
+                              the browser is running; can't wake a closed app or be server-triggered.
   data/
     species.ts             — V1 species catalog (6 species × 2 stages: panda, bear, fox, owl, bunny,
                               otter) + SPECIES_FAMILIES (stage-1 rows only) + getSpeciesById()
@@ -62,6 +70,8 @@ src/
     useFriendsStore.ts      — zustand+persist: Friendship[]; addFriendByCode(userId, code) accepts any
                               non-empty code as a friendId (no backend to validate against yet — the
                               special DEMO_FRIEND_CODE also seeds a demo friend's zoo); friendsOf(userId)
+    useAchievementsStore.ts — zustand+persist: UserAchievement[]; checkAndUnlock(userId, context) is
+                              idempotent (never re-unlocks, never revokes); unlockedIdsFor(userId)
   components/ui/            — design system: Button, Card, Badge, Modal, XPBar, AnimalArt (has
                               graceful fallback to initial-letter badge when art is missing), CompassMark
   screens/
@@ -82,6 +92,9 @@ src/
     SplashScreen / SignInScreen / AvatarPickScreen / PermissionIntroScreen — pre-MainShell onboarding flow
   data/demoFriend.ts         — seeded demo friend (id/name/code + 3 pre-placed zoo animals) so Friends
                               is demoable with zero backend; code is "ALEX2016"
+  data/achievements.ts        — 5 achievements catalog + getAchievementById()
+  components/ui/AchievementBadge.tsx / AchievementUnlockNotice.tsx — locked/unlocked badge rendering
+                              and the inline "Achievement unlocked!" block shown after a trigger
   assets/
     animals/{panda,bear,fox,owl,bunny,otter}/stage-{1,2}.svg — all 6 species now have real art
     avatars/avatar-{1..6}.svg       — 6 original 2016-nostalgic chibi avatars
@@ -126,9 +139,16 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
   screen spec). Two real guest sessions *in the same browser* can genuinely friend each other too,
   since all local data shares one localStorage origin — open two tabs, copy one's "Your code" into
   the other's add-friend field.
-- **Phase 5+**: co-visit XP bonus (explicitly deferred — see below), achievements, push
-  notifications, actually rendering a friend's *shared pins* on your map (the data model/toggle
-  exist, the map-overlay UI for it doesn't yet) — see plan file for full roadmap
+- **Phase 5 (done)**: 5 achievements (First Catch, First Evolution, 3-Day Explorer, Made a Friend,
+  Zoo Curator) with original badge art, checked right after the relevant action in
+  LocationVisitSheet/AnimalDetailSheet/FriendsSheet/ZooTab, surfaced via an inline "Achievement
+  unlocked!" notice plus a full locked/unlocked grid in the Profile sheet. Also notification
+  opt-in — ProfileSheet has an "Enable reminders" button that requests real browser Notification
+  permission and fires one demo notification to prove it works; this is **not** FCM, see
+  `src/lib/notifications.ts` above, and the UI says so explicitly rather than overclaiming.
+- **Phase 6+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
+  configured, actually rendering a friend's *shared pins* on your map (the data model/toggle exist,
+  the map-overlay UI for it doesn't yet) — see plan file for full roadmap
 
 ## Known gaps / follow-ups flagged to user
 - No Firebase project yet — Google sign-in and any backend persistence wait on that
