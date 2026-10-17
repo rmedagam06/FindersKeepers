@@ -110,8 +110,8 @@ export function ExploreTab() {
           lat={pendingCoords[0]}
           lng={pendingCoords[1]}
           onCancel={() => setPendingCoords(null)}
-          onSave={({ label, category }) => {
-            addLocation({ userId: user.id, label, category, lat: pendingCoords[0], lng: pendingCoords[1] })
+          onSave={({ label, category, visibility }) => {
+            addLocation({ userId: user.id, label, category, lat: pendingCoords[0], lng: pendingCoords[1], visibility })
             setPendingCoords(null)
           }}
         />

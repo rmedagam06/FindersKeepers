@@ -2,18 +2,19 @@ import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { LOCATION_CATEGORIES } from '@/data/locationCategories'
-import type { LocationCategory } from '@/types/models'
+import type { LocationCategory, LocationVisibility } from '@/types/models'
 
 interface AddLocationSheetProps {
   lat: number
   lng: number
-  onSave: (input: { label: string; category: LocationCategory }) => void
+  onSave: (input: { label: string; category: LocationCategory; visibility: LocationVisibility }) => void
   onCancel: () => void
 }
 
 export function AddLocationSheet({ onSave, onCancel }: AddLocationSheetProps) {
   const [label, setLabel] = useState('')
   const [category, setCategory] = useState<LocationCategory>('gym')
+  const [shareWithFriends, setShareWithFriends] = useState(false)
 
   return (
     <Modal label="Add a place" onClose={onCancel}>
@@ -36,8 +37,16 @@ export function AddLocationSheet({ onSave, onCancel }: AddLocationSheetProps) {
           </button>
         ))}
       </div>
+      <label className="sheet-checkbox">
+        <input type="checkbox" checked={shareWithFriends} onChange={(event) => setShareWithFriends(event.target.checked)} />
+        Share this pin with friends (just the pin + name — never your exact address)
+      </label>
       <div className="auth-actions">
-        <Button variant="primary" disabled={!label.trim()} onClick={() => onSave({ label: label.trim(), category })}>
+        <Button
+          variant="primary"
+          disabled={!label.trim()}
+          onClick={() => onSave({ label: label.trim(), category, visibility: shareWithFriends ? 'friends' : 'private' })}
+        >
           Save place
         </Button>
         <Button variant="secondary" onClick={onCancel}>
