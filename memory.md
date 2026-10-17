@@ -41,34 +41,43 @@ src/
                               AnimalInstance, Achievement, Friendship, Visit, ...)
   lib/
     game/location.ts       — Haversine distance, arrival radius check, cooldown logic (pure, no UI)
-    game/xp.ts             — XP curve, level calc, evolution threshold (pure)
-    game/rarity.ts          — weighted species roll by location category (pure)
+    game/xp.ts             — XP curve, level calc, evolution threshold isReadyToEvolve() (pure)
+    game/rarity.ts         — weighted species roll by location category (pure)
+    game/claimVisit.ts     — pure reward-claim rules: cooldown + distance + manual-rate-limit gates,
+                              first-visit catch vs. repeat-visit XP, no store/UI access
     assets.ts              — asset-swap manifest pattern (import.meta.glob) for animals,
                               achievements, avatars — components never hardcode a filename
     firebase.ts            — Firebase init, gated on VITE_FIREBASE_* env vars; isFirebaseConfigured flag
     auth.ts                — signInWithGoogle (needs Firebase), createGuestUser (always works, local-only)
   data/
-    species.ts             — V1 species catalog (6 species × 2 stages: panda, bear, fox, owl, bunny, otter)
+    species.ts             — V1 species catalog (6 species × 2 stages: panda, bear, fox, owl, bunny,
+                              otter) + SPECIES_FAMILIES (stage-1 rows only) + getSpeciesById()
     locationCategories.ts  — category → label/color map (gym, work, school, coffee, library, club, custom)
-    game/claimVisit.ts      — pure reward-claim rules: cooldown + distance + manual-rate-limit gates,
-                              first-visit catch vs. repeat-visit XP, no store/UI access (see below)
   store/
     useAppStore.ts          — zustand+persist: current user, avatar, permission state, onboarding flags
     useLocationsStore.ts    — zustand+persist: saved location pins + claimLocation(id) (sets lastClaimedAt)
-    useCollectionStore.ts   — zustand+persist: owned AnimalInstance[]; catchAnimal(), grantXp() (recomputes level)
+    useCollectionStore.ts   — zustand+persist: owned AnimalInstance[]; catchAnimal(), grantXp() (recomputes
+                              level), evolveAnimal(id, evolvedSpeciesId), setNickname(), placeInZoo(id, {x,y}|null)
     useVisitsStore.ts       — zustand+persist: Visit[] audit log; logVisit(), countManualVisitsThisWeek()
   components/ui/            — design system: Button, Card, Badge, Modal, XPBar, AnimalArt (has
                               graceful fallback to initial-letter badge when art is missing), CompassMark
-  screens/                  — SplashScreen, SignInScreen, AvatarPickScreen, PermissionIntroScreen,
-                              HomeMapScreen (Leaflet map + pin dropping + pin tap → check-in),
-                              AddLocationSheet, ProfileSheet, LocationVisitSheet (the check-in modal:
-                              idle → checking → caught/xp/blocked states, calls claimVisit then applies
-                              the result to useLocationsStore/useCollectionStore/useVisitsStore)
+  screens/
+    MainShell.tsx           — owns active-tab state (explore/collection/zoo) + shared top-bar/profile/
+                              bottom-nav chrome; renders one of the three tabs below
+    ExploreTab.tsx          — the map: Leaflet + OSM, tap "+ Add a place" then tap the map to drop a
+                              categorized pin, tap an existing pin to open the check-in flow
+    CollectionTab.tsx       — "Creature-dex" grid: owned instances (tap → AnimalDetailSheet) +
+                              one locked "?" card per undiscovered species family
+    ZooTab.tsx              — unplaced-companions tray + a 3×3 tap-to-place/tap-to-remove yard grid
+                              (no drag library — deliberately simple for V1)
+    AnimalDetailSheet.tsx   — art, nickname input (saves on blur), XP bar, level, Evolve CTA at level 3
+    AddLocationSheet.tsx / ProfileSheet.tsx / LocationVisitSheet.tsx — modals used by ExploreTab
+    SplashScreen / SignInScreen / AvatarPickScreen / PermissionIntroScreen — pre-MainShell onboarding flow
   assets/
-    animals/panda/stage-{1,2}.svg   — only species with real art so far (proves the asset pipeline)
+    animals/{panda,bear,fox,owl,bunny,otter}/stage-{1,2}.svg — all 6 species now have real art
     avatars/avatar-{1..6}.svg       — 6 original 2016-nostalgic chibi avatars
   App.tsx                   — top-level flow controller: splash → sign-in → avatar pick →
-                              permission intro → home map (based on useAppStore state)
+                              permission intro → MainShell (based on useAppStore state)
   index.css                — single global stylesheet; palette tokens + all component CSS classes
                               (prefixed `ds-` for design-system components, screen-specific classes
                               otherwise). No CSS modules/Tailwind component classes — plain CSS by design.
@@ -95,16 +104,33 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
   the 4h cooldown = +50 XP to that location's "buddy" animal. All local-only for now (same
   localStorage pattern as Phase 1); swapping in a Cloud Function later means moving `claimVisit`'s
   call site server-side and re-validating there — the pure function itself doesn't change.
-- **Phase 3 (next)**: Collection ("Creature-dex") + Animal Detail (XP bar, Evolve CTA at level 3) +
-  Zoo placement grid (bottom-nav tabs currently stubbed as "coming soon" — wire them here). Also
-  the point to fill in the other 5 species' art (bear, fox, owl, bunny, otter).
+- **Phase 3 (done)**: real bottom-nav tab switching via `MainShell` (no more "coming soon" stubs) —
+  Collection ("Creature-dex": owned instances + locked "?" cards per undiscovered species family),
+  Animal Detail (nickname, XP bar, Evolve CTA at level 3 using the fixed evolution threshold), and
+  a Zoo tab (tap-to-place/tap-to-remove 3×3 yard grid, reusing the `.map-pond`/`.map-green` CSS
+  shapes that had been dead code since Phase 1). All 6 species now have real original art.
 - **Phase 4+**: friends/social (read-only zoo visits, opt-in pin visibility, co-visit XP bonus),
   achievements, push notifications — see plan file for full roadmap
 
 ## Known gaps / follow-ups flagged to user
-- Only panda has real SVG art; other 5 species (bear, fox, owl, bunny, otter) fall back to
-  `AnimalArt`'s initial-letter badge until drawn
 - No Firebase project yet — Google sign-in and any backend persistence wait on that
-- Bundle is ~660KB (firebase + leaflet) — fine for V1, flagged for later code-splitting if it matters
+- Bundle is ~700KB (firebase + leaflet) — fine for V1, flagged for later code-splitting if it matters
 - No browser-based UI testing performed (user declined Chrome extension) — verify manually after
-  any screen-level changes
+  any screen-level changes; have caught real bugs via code review alone (see below) so it's not a
+  substitute for an actual click-through when you get the chance
+- Zoo yard is a fixed 3×3 (9 slots) — fine for V1, would need a bigger/scrolling grid if someone
+  collects more than 9 companions and wants them all displayed at once
+
+## Bugs already found & fixed (don't reintroduce these patterns)
+- **Desktop grid placement**: `.app-content` switches to a 2-column CSS grid at ≥800px wide. Any
+  new "main content panel" component needs its wrapper class added to the `.map-card, .leaflet-shell,
+  .tab-panel { grid-column: 2; grid-row: 2/5; ... }` rule in the `@media (min-width: 800px)` block in
+  `index.css`, or it silently gets squeezed into the narrow left column with no explicit placement.
+- **Leaflet z-index leaking**: Leaflet's internal panes (tiles/markers/popups) use z-index 200–700,
+  assuming they're contained in the map container's own stacking context. That containment only
+  happens if the container has an *explicit* `z-index` (Leaflet only sets `position: relative` via
+  JS) — `.leaflet-container--themed` now has `z-index: 0` for exactly this reason. Don't remove it;
+  without it, anything overlaid on the map (FABs, badges) can get rendered underneath map internals.
+- **react-leaflet's `center`/`zoom` props only apply on first mount** — recentering after async
+  geolocation resolves needs the imperative `useMap().setView()` pattern already in `ExploreTab.tsx`
+  (`RecenterMap` component). Don't try to just update the `center` prop and expect it to move the map.
