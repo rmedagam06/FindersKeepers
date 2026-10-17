@@ -59,6 +59,9 @@ src/
     useCollectionStore.ts   — zustand+persist: owned AnimalInstance[]; catchAnimal(), grantXp() (recomputes
                               level), evolveAnimal(id, evolvedSpeciesId), setNickname(), placeInZoo(id, {x,y}|null)
     useVisitsStore.ts       — zustand+persist: Visit[] audit log; logVisit(), countManualVisitsThisWeek()
+    useFriendsStore.ts      — zustand+persist: Friendship[]; addFriendByCode(userId, code) accepts any
+                              non-empty code as a friendId (no backend to validate against yet — the
+                              special DEMO_FRIEND_CODE also seeds a demo friend's zoo); friendsOf(userId)
   components/ui/            — design system: Button, Card, Badge, Modal, XPBar, AnimalArt (has
                               graceful fallback to initial-letter badge when art is missing), CompassMark
   screens/
@@ -71,8 +74,14 @@ src/
     ZooTab.tsx              — unplaced-companions tray + a 3×3 tap-to-place/tap-to-remove yard grid
                               (no drag library — deliberately simple for V1)
     AnimalDetailSheet.tsx   — art, nickname input (saves on blur), XP bar, level, Evolve CTA at level 3
+    FriendsSheet.tsx        — "Your code" (your raw user id) + add-by-code input + friends list;
+                              exports friendDisplayName() too (demo friend gets a real name, everyone
+                              else shows as "Explorer #last6ofid" since there's no user directory yet)
+    FriendZooSheet.tsx      — read-only version of the zoo grid for a friend's userId (no onClick handlers)
     AddLocationSheet.tsx / ProfileSheet.tsx / LocationVisitSheet.tsx — modals used by ExploreTab
     SplashScreen / SignInScreen / AvatarPickScreen / PermissionIntroScreen — pre-MainShell onboarding flow
+  data/demoFriend.ts         — seeded demo friend (id/name/code + 3 pre-placed zoo animals) so Friends
+                              is demoable with zero backend; code is "ALEX2016"
   assets/
     animals/{panda,bear,fox,owl,bunny,otter}/stage-{1,2}.svg — all 6 species now have real art
     avatars/avatar-{1..6}.svg       — 6 original 2016-nostalgic chibi avatars
@@ -109,8 +118,17 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
   Animal Detail (nickname, XP bar, Evolve CTA at level 3 using the fixed evolution threshold), and
   a Zoo tab (tap-to-place/tap-to-remove 3×3 yard grid, reusing the `.map-pond`/`.map-green` CSS
   shapes that had been dead code since Phase 1). All 6 species now have real original art.
-- **Phase 4+**: friends/social (read-only zoo visits, opt-in pin visibility, co-visit XP bonus),
-  achievements, push notifications — see plan file for full roadmap
+- **Phase 4 (done)**: friends — add-by-code (any non-empty code is accepted as a friendId, since
+  there's no backend to validate against; a seeded demo friend "Alex" via code ALEX2016 makes this
+  demoable without a second account), read-only friend zoo viewing, and an opt-in "share this pin
+  with friends" checkbox on new locations (`SavedLocation.visibility`). Reachable via a new
+  top-bar icon next to the profile button (not a 4th bottom-nav tab, matching the original plan's
+  screen spec). Two real guest sessions *in the same browser* can genuinely friend each other too,
+  since all local data shares one localStorage origin — open two tabs, copy one's "Your code" into
+  the other's add-friend field.
+- **Phase 5+**: co-visit XP bonus (explicitly deferred — see below), achievements, push
+  notifications, actually rendering a friend's *shared pins* on your map (the data model/toggle
+  exist, the map-overlay UI for it doesn't yet) — see plan file for full roadmap
 
 ## Known gaps / follow-ups flagged to user
 - No Firebase project yet — Google sign-in and any backend persistence wait on that
@@ -120,6 +138,14 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
   substitute for an actual click-through when you get the chance
 - Zoo yard is a fixed 3×3 (9 slots) — fine for V1, would need a bigger/scrolling grid if someone
   collects more than 9 companions and wants them all displayed at once
+- Co-visit XP bonus (plan §9, marked "Nice to Have") deliberately skipped: each user's SavedLocation
+  is its own row with its own id, so "friend visited the same place" would need geo-matching between
+  two independent location records, not just an id match — real complexity for a Nice-to-Have.
+  Revisit once Firestore exists and a "shared location" concept (one canonical row both check into)
+  can be designed properly.
+- Friend lookup has no real validation (any code is accepted) and there's no user directory, so a
+  non-demo friend just displays as "Explorer #last6ofid" — fine for a local demo, not meant to survive
+  contact with a real backend without rework.
 
 ## Bugs already found & fixed (don't reintroduce these patterns)
 - **Desktop grid placement**: `.app-content` switches to a 2-column CSS grid at ≥800px wide. Any
