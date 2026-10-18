@@ -40,10 +40,12 @@ src/
   types/models.ts          — all data model interfaces (User, SavedLocation, Species,
                               AnimalInstance, Achievement, Friendship, Visit, ...)
   lib/
-    game/location.ts       — Haversine distance, arrival radius check, cooldown logic (pure, no UI)
+    game/location.ts       — now just DEFAULT_ARRIVAL_RADIUS_METERS (inert metadata on SavedLocation;
+                              not enforced — see Phase 7 below). Distance/cooldown helpers were
+                              deleted, not just unused — don't re-add without being asked.
     game/xp.ts             — XP curve, level calc, evolution threshold isReadyToEvolve() (pure)
     game/rarity.ts         — weighted species roll by location category (pure)
-    game/claimVisit.ts     — pure reward-claim rules: cooldown + distance + manual-rate-limit gates,
+    game/claimVisit.ts     — pure reward-claim rules: NO gating at all by design (see Phase 7) —
                               first-visit catch vs. repeat-visit XP, no store/UI access
     game/achievements.ts   — pure evaluateAchievements(context, alreadyUnlocked) — same no-store pattern
     game/useAchievementCheck.ts — the one hook that bridges that pure fn to the stores; reads via
@@ -70,10 +72,13 @@ src/
     locationCategories.ts  — category → label/color map (gym, work, school, coffee, library, club, custom)
   store/
     useAppStore.ts          — zustand+persist: current user, avatar, permission state, onboarding flags
-    useLocationsStore.ts    — zustand+persist: saved location pins + claimLocation(id) (sets lastClaimedAt)
+    useLocationsStore.ts    — zustand+persist: saved location pins (addLocation/removeLocation only —
+                              claimLocation/cooldown-stamping was removed, see Phase 7)
     useCollectionStore.ts   — zustand+persist: owned AnimalInstance[]; catchAnimal(), grantXp() (recomputes
                               level), evolveAnimal(id, evolvedSpeciesId), setNickname(), placeInZoo(id, {x,y}|null)
-    useVisitsStore.ts       — zustand+persist: Visit[] audit log; logVisit(), countManualVisitsThisWeek()
+    useVisitsStore.ts       — zustand+persist: Visit[] audit log; logVisit() only (the manual-checkin
+                              weekly counter was removed, see Phase 7) — still needed for
+                              achievements/streak/mood, which all read this log
     useFriendsStore.ts      — zustand+persist: Friendship[]; addFriendByCode(userId, code) accepts any
                               non-empty code as a friendId (no backend to validate against yet — the
                               special DEMO_FRIEND_CODE also seeds a demo friend's zoo); friendsOf(userId)
@@ -142,12 +147,12 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
 - **Phase 1 (done)**: auth screen (guest works now, Google gated on Firebase), avatar picker,
   location-permission intro, real Leaflet+OSM map with tap-to-drop categorized pins (local storage
   only — no Firestore yet)
-- **Phase 2 (done)**: core reward loop end-to-end — tap a pin → "Check in" → GPS check (falls back
-  to manual "I'm here" if denied/unavailable, rate-limited to 2/week) → first visit at a location
-  = guaranteed catch (rarity-weighted roll from that category's species pool), repeat visit after
-  the 4h cooldown = +50 XP to that location's "buddy" animal. All local-only for now (same
-  localStorage pattern as Phase 1); swapping in a Cloud Function later means moving `claimVisit`'s
-  call site server-side and re-validating there — the pure function itself doesn't change.
+- **Phase 2 (done, later simplified — see Phase 7)**: core reward loop end-to-end — tap a pin →
+  "Check in" → first visit at a location = guaranteed catch (rarity-weighted roll from that
+  category's species pool), repeat visit = +50 XP to that location's "buddy" animal. Originally
+  shipped with a GPS distance check, a 4h cooldown, and a manual-checkin weekly limit — **all three
+  were explicitly removed in Phase 7** at the user's request so demo/test runs can check in
+  freely. Don't reintroduce them without being asked.
 - **Phase 3 (done)**: real bottom-nav tab switching via `MainShell` (no more "coming soon" stubs) —
   Collection ("Creature-dex": owned instances + locked "?" cards per undiscovered species family),
   Animal Detail (nickname, XP bar, Evolve CTA at level 3 using the fixed evolution threshold), and
@@ -186,7 +191,17 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
     Collection sort/filter, a "recenter on me" map button, a 3% wildcard catch (rolls the whole
     catalog, not just the location category's pool), a cosmetic companion mood indicator, zoo
     snapshot-to-PNG sharing, and 3 zoo backdrop themes.
-- **Phase 7+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
+- **Phase 7 (done) — removed all check-in gating, at the user's explicit request**: "I don't want
+  it to check my location... don't say you already checked in... don't do the you are out of
+  manual check-ins... we need this so when we are doing a demo or testing we can check in
+  whenever." Concretely: `LocationVisitSheet` no longer calls `navigator.geolocation` at all (every
+  check-in logs as `method: 'manual'`); `claimVisit` dropped its cooldown/distance/manual-limit
+  checks entirely (not hidden behind a flag — actually deleted, along with the now-dead
+  `isCooldownElapsed`/`isWithinArrivalRadius`/`MAX_MANUAL_CHECKINS_PER_WEEK`/`countManualVisitsThisWeek`/
+  `claimLocation` code). Tapping "Check in" on any pin always succeeds now — first visit catches,
+  every visit after that grants XP, with no limit on how often. This is a deliberate reversal of
+  Phase 2's anti-farming design, not a bug — don't re-add gating without being asked again.
+- **Phase 8+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
   configured, actually rendering a friend's *shared pins* on your map (the data model/toggle exist,
   the map-overlay UI for it doesn't yet) — see plan file for full roadmap
 
@@ -203,7 +218,8 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
   is its own row with its own id, so "friend visited the same place" would need geo-matching between
   two independent location records, not just an id match — real complexity for a Nice-to-Have.
   Revisit once Firestore exists and a "shared location" concept (one canonical row both check into)
-  can be designed properly.
+  can be designed properly. Also note Phase 7 removed the cooldown-window concept this feature was
+  originally scoped around ("same cooldown window") — would need rethinking regardless.
 - Friend lookup has no real validation (any code is accepted) and there's no user directory, so a
   non-demo friend just displays as "Explorer #last6ofid" — fine for a local demo, not meant to survive
   contact with a real backend without rework.
