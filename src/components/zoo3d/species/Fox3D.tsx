@@ -1,46 +1,41 @@
 import type { ThreeElements } from '@react-three/fiber'
-import { Legs } from './Legs'
+import { CuteCreature } from './CuteCreature'
 
 export function Fox3D(props: ThreeElements['group']) {
   return (
     <group {...props}>
-      <mesh position={[0, 0.3, -0.18]} scale={[1, 1, 1.3]}>
-        <coneGeometry args={[0.2, 0.42, 10]} />
+      {/* bushy tail peeking from behind */}
+      <mesh position={[0, 0.2, -0.32]} scale={[1, 1, 1.3]}>
+        <sphereGeometry args={[0.2, 14, 14]} />
         <meshStandardMaterial color="#7078A4" />
       </mesh>
-      <mesh position={[0, 0.32, 0]}>
-        <sphereGeometry args={[0.34, 16, 16]} />
-        <meshStandardMaterial color="#7078A4" />
-      </mesh>
-      <mesh position={[0, 0.7, 0]}>
-        <sphereGeometry args={[0.25, 16, 16]} />
-        <meshStandardMaterial color="#7078A4" />
-      </mesh>
-      <mesh position={[0, 0.66, 0.2]} scale={[0.85, 0.8, 1]}>
-        <sphereGeometry args={[0.16, 12, 12]} />
+      <mesh position={[0, 0.2, -0.46]}>
+        <sphereGeometry args={[0.1, 10, 10]} />
         <meshStandardMaterial color="#FFFED6" />
       </mesh>
-      <mesh position={[-0.15, 0.95, 0]} rotation={[0, 0, 0.2]}>
-        <coneGeometry args={[0.1, 0.22, 8]} />
+      <CuteCreature bodyColor="#7078A4" />
+      {/* cream muzzle patch */}
+      <mesh position={[0, 0.46, 0.42]} scale={[0.85, 0.65, 0.5]}>
+        <sphereGeometry args={[0.2, 14, 14]} />
+        <meshStandardMaterial color="#FFFED6" />
+      </mesh>
+      {/* pointy ears */}
+      <mesh position={[-0.26, 0.98, 0]} rotation={[0, 0, 0.15]}>
+        <coneGeometry args={[0.13, 0.26, 10]} />
         <meshStandardMaterial color="#7078A4" />
       </mesh>
-      <mesh position={[0.15, 0.95, 0]} rotation={[0, 0, -0.2]}>
-        <coneGeometry args={[0.1, 0.22, 8]} />
+      <mesh position={[0.26, 0.98, 0]} rotation={[0, 0, -0.15]}>
+        <coneGeometry args={[0.13, 0.26, 10]} />
         <meshStandardMaterial color="#7078A4" />
       </mesh>
-      <mesh position={[-0.09, 0.72, 0.16]}>
-        <sphereGeometry args={[0.035, 8, 8]} />
-        <meshStandardMaterial color="#3F466F" />
+      <mesh position={[-0.26, 0.95, 0.02]} rotation={[0, 0, 0.15]}>
+        <coneGeometry args={[0.07, 0.14, 10]} />
+        <meshStandardMaterial color="#F292AA" />
       </mesh>
-      <mesh position={[0.09, 0.72, 0.16]}>
-        <sphereGeometry args={[0.035, 8, 8]} />
-        <meshStandardMaterial color="#3F466F" />
+      <mesh position={[0.26, 0.95, 0.02]} rotation={[0, 0, -0.15]}>
+        <coneGeometry args={[0.07, 0.14, 10]} />
+        <meshStandardMaterial color="#F292AA" />
       </mesh>
-      <mesh position={[0, 0.63, 0.32]}>
-        <sphereGeometry args={[0.04, 8, 8]} />
-        <meshStandardMaterial color="#3F466F" />
-      </mesh>
-      <Legs color="#7078A4" />
     </group>
   )
 }

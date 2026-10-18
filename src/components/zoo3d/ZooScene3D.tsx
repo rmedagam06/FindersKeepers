@@ -4,6 +4,7 @@ import { OrbitControls } from '@react-three/drei'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { WanderingAnimal } from './WanderingAnimal'
+import { ZooDecorations } from './ZooDecorations'
 import { getSpeciesById } from '@/data/species'
 import { getZooTheme } from '@/data/zooThemes'
 import type { AnimalInstance } from '@/types/models'
@@ -33,13 +34,20 @@ export function ZooScene3D({ animals, readOnly, themeId = 'meadow', onRemove, on
         onCreated={(state) => onCanvasReady?.(state.gl.domElement)}
       >
         <color attach="background" args={[theme.sky]} />
+        <fog attach="fog" args={[theme.sky, 9, 19]} />
         <ambientLight intensity={0.9} />
         <directionalLight position={[5, 8, 5]} intensity={1.1} />
 
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow={false}>
-          <circleGeometry args={[YARD_BOUNDS + 0.6, 32]} />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+          <circleGeometry args={[YARD_BOUNDS + 3, 40]} />
+          <meshStandardMaterial color={theme.outerGround} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[YARD_BOUNDS + 0.6, 40]} />
           <meshStandardMaterial color={theme.ground} />
         </mesh>
+
+        <ZooDecorations themeId={themeId} />
 
         <Suspense fallback={null}>
           {animals.map((animal) => {

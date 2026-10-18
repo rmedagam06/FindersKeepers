@@ -1,50 +1,31 @@
 import type { ThreeElements } from '@react-three/fiber'
+import { CuteCreature } from './CuteCreature'
 
 export function Owl3D(props: ThreeElements['group']) {
   return (
     <group {...props}>
-      <mesh position={[0, 0.38, 0]}>
-        <sphereGeometry args={[0.4, 16, 16]} />
-        <meshStandardMaterial color="#98C48D" />
-      </mesh>
-      <mesh position={[0, 0.5, 0.26]} scale={[1, 1.1, 0.7]}>
-        <sphereGeometry args={[0.26, 14, 14]} />
+      <CuteCreature bodyColor="#98C48D" noseColor="#F292AA" />
+      {/* wings, bigger than the base arm nubs so they read as wings instead */}
+      <mesh position={[-0.3, 0.2, 0]} rotation={[0, 0, 0.4]} scale={[0.6, 1, 0.6]}>
+        <sphereGeometry args={[0.2, 14, 14]} />
         <meshStandardMaterial color="#CEE2B1" />
       </mesh>
-      <mesh position={[-0.11, 0.56, 0.42]}>
-        <sphereGeometry args={[0.11, 12, 12]} />
-        <meshStandardMaterial color="#FFFED6" />
+      <mesh position={[0.3, 0.2, 0]} rotation={[0, 0, -0.4]} scale={[0.6, 1, 0.6]}>
+        <sphereGeometry args={[0.2, 14, 14]} />
+        <meshStandardMaterial color="#CEE2B1" />
       </mesh>
-      <mesh position={[0.11, 0.56, 0.42]}>
-        <sphereGeometry args={[0.11, 12, 12]} />
-        <meshStandardMaterial color="#FFFED6" />
-      </mesh>
-      <mesh position={[-0.11, 0.56, 0.48]}>
-        <sphereGeometry args={[0.045, 8, 8]} />
-        <meshStandardMaterial color="#3F466F" />
-      </mesh>
-      <mesh position={[0.11, 0.56, 0.48]}>
-        <sphereGeometry args={[0.045, 8, 8]} />
-        <meshStandardMaterial color="#3F466F" />
-      </mesh>
-      <mesh position={[0, 0.46, 0.52]} rotation={[Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.04, 0.09, 8]} />
-        <meshStandardMaterial color="#F292AA" />
-      </mesh>
-      <mesh position={[-0.35, 0.36, 0]} rotation={[0, 0, 0.5]} scale={[0.5, 1, 0.3]}>
-        <sphereGeometry args={[0.24, 12, 12]} />
+      {/* ear tufts */}
+      <mesh position={[-0.18, 0.98, 0.04]} rotation={[0, 0, 0.2]}>
+        <coneGeometry args={[0.07, 0.16, 8]} />
         <meshStandardMaterial color="#98C48D" />
       </mesh>
-      <mesh position={[0.35, 0.36, 0]} rotation={[0, 0, -0.5]} scale={[0.5, 1, 0.3]}>
-        <sphereGeometry args={[0.24, 12, 12]} />
+      <mesh position={[0.18, 0.98, 0.04]} rotation={[0, 0, -0.2]}>
+        <coneGeometry args={[0.07, 0.16, 8]} />
         <meshStandardMaterial color="#98C48D" />
       </mesh>
-      <mesh position={[-0.1, 0.03, 0.1]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshStandardMaterial color="#F292AA" />
-      </mesh>
-      <mesh position={[0.1, 0.03, 0.1]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
+      {/* small beak, below the base nose */}
+      <mesh position={[0, 0.42, 0.52]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.045, 0.1, 8]} />
         <meshStandardMaterial color="#F292AA" />
       </mesh>
     </group>

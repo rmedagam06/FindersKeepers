@@ -59,7 +59,12 @@ export function WanderingAnimal({
       group.rotation.y = THREE.MathUtils.damp(group.rotation.y, heading, 6, delta)
     }
 
-    group.position.y = Math.max(0, Math.sin(state.clock.elapsedTime * BOB_SPEED + phaseOffset)) * BOB_AMPLITUDE
+    // A gentle squash-and-stretch bounce instead of a plain up/down bob —
+    // squashed (wide/flat) at the bottom of the hop, stretched (tall/thin)
+    // at the top. Multiplies with the per-stage scale on <Species3D>.
+    const bounce = Math.max(0, Math.sin(state.clock.elapsedTime * BOB_SPEED + phaseOffset))
+    group.position.y = bounce * BOB_AMPLITUDE
+    group.scale.set(1.08 - bounce * 0.12, 0.92 + bounce * 0.16, 1.08 - bounce * 0.12)
   })
 
   if (!Species3D) return null
