@@ -57,6 +57,13 @@ src/
     auth.ts                — signInWithGoogle (needs Firebase), createGuestUser (always works, local-only)
     notifications.ts       — browser Notification API ONLY, not FCM. Can show a notification while
                               the browser is running; can't wake a closed app or be server-triggered.
+    feedback.ts             — Web Audio chimes (playCatchSound/playEvolveSound/playAchievementSound)
+                              + navigator.vibrate() haptics; best-effort, silently no-ops if unsupported
+    backup.ts                — exportBackup()/importBackup() — JSON dump/restore of every
+                              zustand-persist localStorage key; BACKUP_KEYS must stay in sync with
+                              each store's `persist({ name: ... })` value
+    game/mood.ts             — computeMood(animal, visits) — purely cosmetic happy/content/sleepy,
+                              based on days since last catch/XP event tied to that animal instance
   data/
     species.ts             — V1 species catalog (6 species × 2 stages: panda, bear, fox, owl, bunny,
                               otter) + SPECIES_FAMILIES (stage-1 rows only) + getSpeciesById()
@@ -81,8 +88,9 @@ src/
                               categorized pin, tap an existing pin to open the check-in flow
     CollectionTab.tsx       — "Creature-dex" grid: owned instances (tap → AnimalDetailSheet) +
                               one locked "?" card per undiscovered species family
-    ZooTab.tsx              — unplaced-companions tray + a 3×3 tap-to-place/tap-to-remove yard grid
-                              (no drag library — deliberately simple for V1)
+    ZooTab.tsx              — unplaced-companions tray (tap-to-place at a random yard point, no
+                              drag library) + the lazy-loaded 3D scene + a backdrop-theme picker +
+                              "Save a photo" snapshot button
     AnimalDetailSheet.tsx   — art, nickname input (saves on blur), XP bar, level, Evolve CTA at level 3
     FriendsSheet.tsx        — "Your code" (your raw user id) + add-by-code input + friends list;
                               exports friendDisplayName() too (demo friend gets a real name, everyone
@@ -92,12 +100,26 @@ src/
     SplashScreen / SignInScreen / AvatarPickScreen / PermissionIntroScreen — pre-MainShell onboarding flow
   data/demoFriend.ts         — seeded demo friend (id/name/code + 3 pre-placed zoo animals) so Friends
                               is demoable with zero backend; code is "ALEX2016"
-  data/achievements.ts        — 5 achievements catalog + getAchievementById()
+  data/achievements.ts        — 7 achievements catalog + getAchievementById()
+  data/zooThemes.ts           — 3 ground/sky color presets (Meadow/Beach/Snow) for the 3D scene,
+                              built only from colors already in the palette
   components/ui/AchievementBadge.tsx / AchievementUnlockNotice.tsx — locked/unlocked badge rendering
-                              and the inline "Achievement unlocked!" block shown after a trigger
+                              and the inline "Achievement unlocked!" block (also plays the
+                              achievement sound/vibration — centralized here, not per call site)
+  components/ui/MoodDot.tsx   — the cosmetic mood indicator (colored dot ± label)
+  components/zoo3d/           — the 3D zoo, lazy-loaded (see Phase 6 below for why):
+    ZooScene3D.tsx           — Canvas, lighting, ground (themeable), OrbitControls, tap-to-inspect
+                              popup; accepts onCanvasReady(canvas) for snapshot support
+    WanderingAnimal.tsx       — per-animal random-wander movement + bob, via useFrame
+    species/{Panda,Bear,Fox,Owl,Bunny,Otter}3D.tsx — low-poly primitive-built creatures (spheres/
+                              cones/cylinders only, no 3D models/assets), same palette as the flat SVGs
+    species/Legs.tsx          — shared 4-leg helper reused by several species
+  lib/webgl.ts                — isWebGLAvailable() feature-detection, deliberately dependency-free
+                              from three.js so checking support never triggers loading the 3D chunk
   assets/
     animals/{panda,bear,fox,owl,bunny,otter}/stage-{1,2}.svg — all 6 species now have real art
     avatars/avatar-{1..6}.svg       — 6 original 2016-nostalgic chibi avatars
+    achievements/*.svg              — 7 badge icons
   App.tsx                   — top-level flow controller: splash → sign-in → avatar pick →
                               permission intro → MainShell (based on useAppStore state)
   index.css                — single global stylesheet; palette tokens + all component CSS classes
@@ -146,13 +168,32 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
   opt-in — ProfileSheet has an "Enable reminders" button that requests real browser Notification
   permission and fires one demo notification to prove it works; this is **not** FCM, see
   `src/lib/notifications.ts` above, and the UI says so explicitly rather than overclaiming.
-- **Phase 6+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
+- **Phase 6 (done) — 3D Zoo + 10 features** (this was NOT in the original V1 plan; it's a
+  user-requested expansion, planned separately — see the plan file, which now covers only this
+  increment, not the already-shipped V1 phases above):
+  - **3D Zoo**: the 2D 3×3 grid is gone — `ZooTab`/`FriendZooSheet` now render a real Three.js/
+    React-Three-Fiber scene. Placed companions wander the yard on their own (random-target walk +
+    bob, no pathfinding/collision). Each species is a low-poly creature built from primitive
+    geometries (spheres/cones/cylinders) in its existing palette colors — no 3D model files, none
+    were authorable here. `AnimalInstance.zooPosition` is UNCHANGED (`{x,y}|null`) — it's just a
+    one-time spawn point now (continuous world coords, not a grid index); live wander position
+    while the scene is mounted is ephemeral component state, never written back to the store.
+  - Three.js/`@react-three/fiber`/`@react-three/drei` are **lazy-loaded** (`React.lazy` +
+    `Suspense`) specifically so they only download when the Zoo tab opens — confirmed via build
+    output: main bundle ~720KB (barely moved), the 3D code is its own ~880KB chunk.
+  - Also added: sound+haptic feedback on catch/evolve/achievement, a visit-streak tracker + two
+    more achievements (7-Day Streak, Caught 'em All — now 7 total), full data export/import backup,
+    Collection sort/filter, a "recenter on me" map button, a 3% wildcard catch (rolls the whole
+    catalog, not just the location category's pool), a cosmetic companion mood indicator, zoo
+    snapshot-to-PNG sharing, and 3 zoo backdrop themes.
+- **Phase 7+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
   configured, actually rendering a friend's *shared pins* on your map (the data model/toggle exist,
   the map-overlay UI for it doesn't yet) — see plan file for full roadmap
 
 ## Known gaps / follow-ups flagged to user
 - No Firebase project yet — Google sign-in and any backend persistence wait on that
-- Bundle is ~700KB (firebase + leaflet) — fine for V1, flagged for later code-splitting if it matters
+- Main bundle ~720KB, plus a separate ~880KB lazy-loaded chunk for the 3D zoo (only fetched when
+  that tab opens) — acceptable for V1; the lazy-load boundary is the thing to preserve if this grows
 - No browser-based UI testing performed (user declined Chrome extension) — verify manually after
   any screen-level changes; have caught real bugs via code review alone (see below) so it's not a
   substitute for an actual click-through when you get the chance
@@ -180,3 +221,11 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
 - **react-leaflet's `center`/`zoom` props only apply on first mount** — recentering after async
   geolocation resolves needs the imperative `useMap().setView()` pattern already in `ExploreTab.tsx`
   (`RecenterMap` component). Don't try to just update the `center` prop and expect it to move the map.
+- **`@react-three/fiber` doesn't export `GroupProps`** (that's an older-version type name) — use
+  `ThreeElements['group']` from the same package for a species component's prop type.
+- **Canvas snapshot needs `preserveDrawingBuffer: true`** on the `<Canvas gl={{...}}>` prop, or
+  `canvasEl.toDataURL()` can capture a blank/black frame because WebGL may clear the buffer right
+  after each render. Already set in `ZooScene3D.tsx` — don't remove it if touching that file.
+- **Persisted-spawn vs. ephemeral-live-position is a deliberate split**, not an oversight: writing
+  a wandering animal's position to the store every animation frame would thrash localStorage. Only
+  the one-time spawn point is persisted; live position during the session is component-local state.
