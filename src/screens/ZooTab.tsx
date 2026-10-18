@@ -1,20 +1,32 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { useCollectionStore } from '@/store/useCollectionStore'
 import { getSpeciesById } from '@/data/species'
 import { AnimalArt } from '@/components/ui/AnimalArt'
 import { useAchievementCheck } from '@/lib/game/useAchievementCheck'
+import { isWebGLAvailable } from '@/lib/webgl'
 
-const ZOO_COLUMNS = 3
-const ZOO_ROWS = 3
+const ZooScene3D = lazy(() =>
+  import('@/components/zoo3d/ZooScene3D').then((module) => ({ default: module.ZooScene3D })),
+)
+
+const YARD_BOUNDS = 4
+const MAX_PLACED = 9
+
+function randomYardPoint() {
+  return {
+    x: (Math.random() * 2 - 1) * YARD_BOUNDS,
+    y: (Math.random() * 2 - 1) * YARD_BOUNDS,
+  }
+}
 
 export function ZooTab() {
   const user = useAppStore((state) => state.user)
   const allAnimals = useCollectionStore((state) => state.animals)
   const placeInZoo = useCollectionStore((state) => state.placeInZoo)
   const checkAchievements = useAchievementCheck()
-  const [selectedForPlacement, setSelectedForPlacement] = useState<string | null>(null)
   const [unlockToast, setUnlockToast] = useState<string | null>(null)
+  const webGLAvailable = isWebGLAvailable()
 
   useEffect(() => {
     if (!unlockToast) return
@@ -23,28 +35,19 @@ export function ZooTab() {
   }, [unlockToast])
 
   const myAnimals = allAnimals.filter((animal) => animal.userId === user?.id)
+  const placed = myAnimals.filter((animal) => animal.zooPosition !== null)
   const unplaced = myAnimals.filter((animal) => animal.zooPosition === null)
-  const slots = Array.from({ length: ZOO_ROWS * ZOO_COLUMNS }, (_, index) => ({
-    x: index % ZOO_COLUMNS,
-    y: Math.floor(index / ZOO_COLUMNS),
-  }))
+  const yardFull = placed.length >= MAX_PLACED
 
-  function animalAt(x: number, y: number) {
-    return myAnimals.find((animal) => animal.zooPosition?.x === x && animal.zooPosition?.y === y)
+  function handlePlace(animalId: string) {
+    if (yardFull) return
+    placeInZoo(animalId, randomYardPoint())
+    const unlocked = checkAchievements()
+    if (unlocked.length > 0) setUnlockToast(`Achievement unlocked: ${unlocked.map((a) => a.name).join(', ')}!`)
   }
 
-  function handleSlotTap(x: number, y: number) {
-    const occupant = animalAt(x, y)
-    if (occupant) {
-      placeInZoo(occupant.id, null)
-      return
-    }
-    if (selectedForPlacement) {
-      placeInZoo(selectedForPlacement, { x, y })
-      setSelectedForPlacement(null)
-      const unlocked = checkAchievements()
-      if (unlocked.length > 0) setUnlockToast(`Achievement unlocked: ${unlocked.map((a) => a.name).join(', ')}!`)
-    }
+  function handleRemove(animalId: string) {
+    placeInZoo(animalId, null)
   }
 
   return (
@@ -63,8 +66,9 @@ export function ZooTab() {
               return (
                 <button
                   key={animal.id}
-                  className={selectedForPlacement === animal.id ? 'zoo-tray-item is-selected' : 'zoo-tray-item'}
-                  onClick={() => setSelectedForPlacement(animal.id === selectedForPlacement ? null : animal.id)}
+                  className="zoo-tray-item"
+                  onClick={() => handlePlace(animal.id)}
+                  disabled={yardFull}
                   aria-label={`${animal.nickname || species.name} — tap to place in the yard`}
                 >
                   <AnimalArt speciesId={species.assetKey} speciesName={species.name} stage={animal.stage} size={48} />
@@ -74,31 +78,18 @@ export function ZooTab() {
           </div>
         )}
 
-        {selectedForPlacement && <p className="zoo-hint">Tap an empty spot in the yard to place them.</p>}
+        {yardFull && <p className="zoo-hint">Your yard is full — remove a companion to make room for another.</p>}
 
         <div className="zoo-yard">
-          <div className="map-pond" />
-          <div className="map-green map-green--one" />
-          <div className="map-green map-green--two" />
-          <div className="map-green map-green--three" />
-          <div className="zoo-grid">
-            {slots.map(({ x, y }) => {
-              const occupant = animalAt(x, y)
-              const species = occupant ? getSpeciesById(occupant.speciesId) : undefined
-              return (
-                <button
-                  key={`${x}-${y}`}
-                  className={occupant ? 'zoo-slot is-filled' : 'zoo-slot'}
-                  onClick={() => handleSlotTap(x, y)}
-                  aria-label={occupant && species ? `${species.name} placed here — tap to remove` : 'Empty spot'}
-                >
-                  {occupant && species && (
-                    <AnimalArt speciesId={species.assetKey} speciesName={species.name} stage={occupant.stage} size={56} />
-                  )}
-                </button>
-              )
-            })}
-          </div>
+          {webGLAvailable ? (
+            <Suspense fallback={<p className="auth-subtitle">Loading the yard…</p>}>
+              <ZooScene3D animals={placed} onRemove={handleRemove} />
+            </Suspense>
+          ) : (
+            <p className="auth-subtitle">
+              Your browser doesn't support 3D graphics, so the zoo can't render here. Try a different browser.
+            </p>
+          )}
         </div>
       </div>
 

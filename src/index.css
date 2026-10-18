@@ -1188,6 +1188,8 @@ button:focus-visible {
 
 .zoo-yard {
   position: relative;
+  display: grid;
+  place-items: center;
   flex: 1 1 260px;
   min-height: 280px;
   overflow: hidden;
@@ -1197,34 +1199,11 @@ button:focus-visible {
   box-shadow: 0 14px 40px rgb(80 87 126 / 14%);
 }
 
-.zoo-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+.zoo-canvas {
+  display: block;
+  width: 100%;
   height: 100%;
-  padding: 16px;
-}
-
-.zoo-slot {
-  display: grid;
-  place-items: center;
-  border: 3px dashed rgb(112 120 164 / 35%);
-  border-radius: 20px;
-  background: rgb(255 255 255 / 35%);
-  cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease;
-}
-
-.zoo-slot:hover {
-  border-color: #71bcb7;
-}
-
-.zoo-slot.is-filled {
-  border-style: solid;
-  border-color: rgb(255 255 255 / 82%);
-  background: rgb(255 255 255 / 55%);
+  touch-action: none;
 }
 
 .zoo-yard--mini {
