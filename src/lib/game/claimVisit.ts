@@ -1,10 +1,10 @@
 import type { AnimalInstance, SavedLocation, Species, VisitMethod } from '@/types/models'
 import { isCooldownElapsed, isWithinArrivalRadius, MAX_MANUAL_CHECKINS_PER_WEEK, type Coordinates } from './location'
-import { rollSpeciesForCategory } from './rarity'
+import { rollSpeciesForCategory, rollWildcardSpecies, WILDCARD_CHANCE } from './rarity'
 import { XP_PER_VISIT } from './xp'
 
 export type ClaimResult =
-  | { ok: true; kind: 'catch'; species: Species }
+  | { ok: true; kind: 'catch'; species: Species; wildcard: boolean }
   | { ok: true; kind: 'xp'; animalInstanceId: string; xpGained: number }
   | { ok: false; reason: 'cooldown' | 'too-far' | 'manual-limit' }
 
@@ -54,6 +54,10 @@ export function claimVisit(input: ClaimVisitInput): ClaimResult {
     return { ok: true, kind: 'xp', animalInstanceId: buddy.id, xpGained: XP_PER_VISIT }
   }
 
-  const species = rollSpeciesForCategory(input.location.category, input.catalog, input.random)
-  return { ok: true, kind: 'catch', species }
+  const random = input.random ?? Math.random
+  const isWildcard = random() < WILDCARD_CHANCE
+  const species = isWildcard
+    ? rollWildcardSpecies(input.catalog, random)
+    : rollSpeciesForCategory(input.location.category, input.catalog, random)
+  return { ok: true, kind: 'catch', species, wildcard: isWildcard }
 }

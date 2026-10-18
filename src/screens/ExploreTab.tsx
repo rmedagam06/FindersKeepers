@@ -56,15 +56,30 @@ export function ExploreTab() {
   const [isPlacing, setIsPlacing] = useState(false)
   const [pendingCoords, setPendingCoords] = useState<[number, number] | null>(null)
   const [visitingLocation, setVisitingLocation] = useState<SavedLocation | null>(null)
+  const [locateError, setLocateError] = useState<string | null>(null)
+
+  function recenterOnMe() {
+    setLocateError(null)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const next: [number, number] = [position.coords.latitude, position.coords.longitude]
+        setUserPosition(next)
+        setCenter(next)
+      },
+      () => setLocateError("Couldn't find you — check your location permission."),
+    )
+  }
 
   useEffect(() => {
     if (locationPermission !== 'granted') return
-    navigator.geolocation.getCurrentPosition((position) => {
-      const next: [number, number] = [position.coords.latitude, position.coords.longitude]
-      setUserPosition(next)
-      setCenter(next)
-    })
+    recenterOnMe()
   }, [locationPermission])
+
+  useEffect(() => {
+    if (!locateError) return
+    const timer = setTimeout(() => setLocateError(null), 2600)
+    return () => clearTimeout(timer)
+  }, [locateError])
 
   const myLocations = locations.filter((loc) => loc.userId === user?.id)
 
@@ -103,7 +118,12 @@ export function ExploreTab() {
         <button className="map-fab" onClick={() => setIsPlacing((v) => !v)} aria-pressed={isPlacing}>
           {isPlacing ? 'Tap the map…' : '+ Add a place'}
         </button>
+        <button className="map-fab map-fab--recenter" onClick={recenterOnMe} aria-label="Recenter on me">
+          <span className="icon-recenter" />
+        </button>
       </div>
+
+      {locateError && <p className="toast">{locateError}</p>}
 
       {pendingCoords && user && (
         <AddLocationSheet

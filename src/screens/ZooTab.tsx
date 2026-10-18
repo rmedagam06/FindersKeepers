@@ -2,7 +2,9 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { useAppStore } from '@/store/useAppStore'
 import { useCollectionStore } from '@/store/useCollectionStore'
 import { getSpeciesById } from '@/data/species'
+import { ZOO_THEMES } from '@/data/zooThemes'
 import { AnimalArt } from '@/components/ui/AnimalArt'
+import { Button } from '@/components/ui/Button'
 import { useAchievementCheck } from '@/lib/game/useAchievementCheck'
 import { isWebGLAvailable } from '@/lib/webgl'
 
@@ -24,8 +26,11 @@ export function ZooTab() {
   const user = useAppStore((state) => state.user)
   const allAnimals = useCollectionStore((state) => state.animals)
   const placeInZoo = useCollectionStore((state) => state.placeInZoo)
+  const zooThemeId = useAppStore((state) => state.zooThemeId)
+  const setZooThemeId = useAppStore((state) => state.setZooThemeId)
   const checkAchievements = useAchievementCheck()
   const [unlockToast, setUnlockToast] = useState<string | null>(null)
+  const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null)
   const webGLAvailable = isWebGLAvailable()
 
   useEffect(() => {
@@ -48,6 +53,14 @@ export function ZooTab() {
 
   function handleRemove(animalId: string) {
     placeInZoo(animalId, null)
+  }
+
+  function handleSnapshot() {
+    if (!canvasEl) return
+    const link = document.createElement('a')
+    link.href = canvasEl.toDataURL('image/png')
+    link.download = 'my-zoo.png'
+    link.click()
   }
 
   return (
@@ -80,10 +93,27 @@ export function ZooTab() {
 
         {yardFull && <p className="zoo-hint">Your yard is full — remove a companion to make room for another.</p>}
 
+        <div className="zoo-toolbar">
+          <div className="category-row category-row--wrap" aria-label="Zoo backdrop">
+            {ZOO_THEMES.map((theme) => (
+              <button
+                key={theme.id}
+                className={zooThemeId === theme.id ? 'category-pill is-active' : 'category-pill'}
+                onClick={() => setZooThemeId(theme.id)}
+              >
+                {theme.label}
+              </button>
+            ))}
+          </div>
+          <Button variant="secondary" onClick={handleSnapshot} disabled={!canvasEl}>
+            Save a photo
+          </Button>
+        </div>
+
         <div className="zoo-yard">
           {webGLAvailable ? (
             <Suspense fallback={<p className="auth-subtitle">Loading the yard…</p>}>
-              <ZooScene3D animals={placed} onRemove={handleRemove} />
+              <ZooScene3D animals={placed} themeId={zooThemeId} onRemove={handleRemove} onCanvasReady={setCanvasEl} />
             </Suspense>
           ) : (
             <p className="auth-subtitle">

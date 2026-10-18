@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { WanderingAnimal } from './WanderingAnimal'
 import { getSpeciesById } from '@/data/species'
+import { getZooTheme } from '@/data/zooThemes'
 import type { AnimalInstance } from '@/types/models'
 
 const YARD_BOUNDS = 4
@@ -12,24 +13,32 @@ const YARD_BOUNDS = 4
 interface ZooScene3DProps {
   animals: AnimalInstance[]
   readOnly?: boolean
+  themeId?: string
   onRemove?: (animalId: string) => void
+  onCanvasReady?: (canvas: HTMLCanvasElement) => void
 }
 
-export function ZooScene3D({ animals, readOnly, onRemove }: ZooScene3DProps) {
+export function ZooScene3D({ animals, readOnly, themeId = 'meadow', onRemove, onCanvasReady }: ZooScene3DProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selectedAnimal = animals.find((animal) => animal.id === selectedId) ?? null
   const selectedSpecies = selectedAnimal ? getSpeciesById(selectedAnimal.speciesId) : undefined
+  const theme = getZooTheme(themeId)
 
   return (
     <>
-      <Canvas camera={{ position: [0, 6, 7.5], fov: 50 }} className="zoo-canvas">
-        <color attach="background" args={['#FFFED6']} />
+      <Canvas
+        camera={{ position: [0, 6, 7.5], fov: 50 }}
+        className="zoo-canvas"
+        gl={{ preserveDrawingBuffer: true }}
+        onCreated={(state) => onCanvasReady?.(state.gl.domElement)}
+      >
+        <color attach="background" args={[theme.sky]} />
         <ambientLight intensity={0.9} />
         <directionalLight position={[5, 8, 5]} intensity={1.1} />
 
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow={false}>
           <circleGeometry args={[YARD_BOUNDS + 0.6, 32]} />
-          <meshStandardMaterial color="#CEE2B1" />
+          <meshStandardMaterial color={theme.ground} />
         </mesh>
 
         <Suspense fallback={null}>

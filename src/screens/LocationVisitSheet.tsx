@@ -8,6 +8,7 @@ import { categoryMeta } from '@/data/locationCategories'
 import { SPECIES_CATALOG } from '@/data/species'
 import { claimVisit } from '@/lib/game/claimVisit'
 import { useAchievementCheck } from '@/lib/game/useAchievementCheck'
+import { playCatchSound, vibrate } from '@/lib/feedback'
 import { useAppStore } from '@/store/useAppStore'
 import { useLocationsStore } from '@/store/useLocationsStore'
 import { useCollectionStore } from '@/store/useCollectionStore'
@@ -17,7 +18,7 @@ import type { Achievement, SavedLocation, Species } from '@/types/models'
 type ViewState =
   | { step: 'idle' }
   | { step: 'checking' }
-  | { step: 'caught'; species: Species }
+  | { step: 'caught'; species: Species; wildcard: boolean }
   | { step: 'xp'; amount: number }
   | { step: 'blocked'; reason: string }
 
@@ -62,7 +63,9 @@ export function LocationVisitSheet({ location, onClose }: { location: SavedLocat
       const instance = catchAnimal({ userId: user.id, speciesId: result.species.id, sourceLocationId: location.id })
       logVisit({ userId: user.id, locationId: location.id, method, rewardGranted: { type: 'catch', refId: instance.id } })
       setNewAchievements(checkAchievements())
-      setView({ step: 'caught', species: result.species })
+      playCatchSound()
+      vibrate(50)
+      setView({ step: 'caught', species: result.species, wildcard: result.wildcard })
     } else {
       grantXp(result.animalInstanceId, result.xpGained)
       logVisit({ userId: user.id, locationId: location.id, method, rewardGranted: { type: 'xp', refId: result.animalInstanceId } })
@@ -109,6 +112,7 @@ export function LocationVisitSheet({ location, onClose }: { location: SavedLocat
 
       {view.step === 'caught' && (
         <>
+          {view.wildcard && <p className="wildcard-banner">Wildcard encounter!</p>}
           <RarityBadge rarity={view.species.rarity} />
           <div className="catch-reveal">
             <AnimalArt speciesId={view.species.assetKey} speciesName={view.species.name} stage={1} size={120} />

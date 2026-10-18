@@ -6,6 +6,20 @@ export const RARITY_WEIGHTS: Record<Rarity, number> = {
   rare: 5,
 }
 
+/** Flat chance any check-in rolls from the entire catalog instead of just
+ * the location category's pool — a small bonus-excitement wildcard. */
+export const WILDCARD_CHANCE = 0.03
+
+function weightedPick(pool: Species[], random: () => number): Species {
+  const totalWeight = pool.reduce((sum, species) => sum + RARITY_WEIGHTS[species.rarity], 0)
+  let roll = random() * totalWeight
+  for (const species of pool) {
+    roll -= RARITY_WEIGHTS[species.rarity]
+    if (roll <= 0) return species
+  }
+  return pool[pool.length - 1]
+}
+
 /** Rolls one species from the pool of species flavored for this location category, weighted by rarity. `random` is injectable for deterministic tests. */
 export function rollSpeciesForCategory(
   category: LocationCategory,
@@ -16,12 +30,14 @@ export function rollSpeciesForCategory(
   if (pool.length === 0) {
     throw new Error(`No stage-1 species configured for category "${category}"`)
   }
+  return weightedPick(pool, random)
+}
 
-  const totalWeight = pool.reduce((sum, species) => sum + RARITY_WEIGHTS[species.rarity], 0)
-  let roll = random() * totalWeight
-  for (const species of pool) {
-    roll -= RARITY_WEIGHTS[species.rarity]
-    if (roll <= 0) return species
+/** Rolls one species from the WHOLE catalog (every category's pool combined), ignoring location category — the wildcard encounter. */
+export function rollWildcardSpecies(catalog: Species[], random: () => number = Math.random): Species {
+  const pool = catalog.filter((species) => species.stage === 1)
+  if (pool.length === 0) {
+    throw new Error('No stage-1 species configured in the catalog')
   }
-  return pool[pool.length - 1]
+  return weightedPick(pool, random)
 }

@@ -36,6 +36,18 @@ export const ACHIEVEMENTS: Achievement[] = [
     assetKey: 'zoo-curator',
     criteria: 'Place 5 companions in your zoo',
   },
+  {
+    id: 'seven-day-streak',
+    name: '7-Day Streak',
+    assetKey: 'seven-day-streak',
+    criteria: 'Visit a saved place on 7 consecutive days',
+  },
+  {
+    id: 'caught-em-all',
+    name: "Caught 'em All",
+    assetKey: 'caught-em-all',
+    criteria: 'Own a companion from every species family',
+  },
 ]
 
 export function getAchievementById(id: string): Achievement | undefined {

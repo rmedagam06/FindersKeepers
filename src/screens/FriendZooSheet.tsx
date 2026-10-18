@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { useAppStore } from '@/store/useAppStore'
 import { useCollectionStore } from '@/store/useCollectionStore'
 import { isWebGLAvailable } from '@/lib/webgl'
 
@@ -18,6 +19,7 @@ export function FriendZooSheet({
   onClose: () => void
 }) {
   const allAnimals = useCollectionStore((state) => state.animals)
+  const zooThemeId = useAppStore((state) => state.zooThemeId)
   const friendAnimals = allAnimals.filter((animal) => animal.userId === friendId && animal.zooPosition !== null)
   const webGLAvailable = isWebGLAvailable()
 
@@ -31,7 +33,7 @@ export function FriendZooSheet({
       <div className="zoo-yard zoo-yard--mini">
         {webGLAvailable ? (
           <Suspense fallback={<p className="auth-subtitle">Loading the yard…</p>}>
-            <ZooScene3D animals={friendAnimals} readOnly />
+            <ZooScene3D animals={friendAnimals} themeId={zooThemeId} readOnly />
           </Suspense>
         ) : (
           <p className="auth-subtitle">Your browser doesn't support 3D graphics, so the zoo can't render here.</p>

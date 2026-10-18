@@ -5,16 +5,21 @@ import { AnimalArt } from '@/components/ui/AnimalArt'
 import { RarityBadge } from '@/components/ui/Badge'
 import { XPBar } from '@/components/ui/XPBar'
 import { AchievementUnlockNotice } from '@/components/ui/AchievementUnlockNotice'
+import { MoodDot } from '@/components/ui/MoodDot'
 import { getSpeciesById } from '@/data/species'
 import { useCollectionStore } from '@/store/useCollectionStore'
+import { useVisitsStore } from '@/store/useVisitsStore'
 import { isReadyToEvolve } from '@/lib/game/xp'
+import { computeMood } from '@/lib/game/mood'
 import { useAchievementCheck } from '@/lib/game/useAchievementCheck'
+import { playEvolveSound, vibrate } from '@/lib/feedback'
 import type { Achievement, AnimalInstance } from '@/types/models'
 
 export function AnimalDetailSheet({ animal, onClose }: { animal: AnimalInstance; onClose: () => void }) {
   const species = getSpeciesById(animal.speciesId)
   const setNickname = useCollectionStore((state) => state.setNickname)
   const evolveAnimal = useCollectionStore((state) => state.evolveAnimal)
+  const visits = useVisitsStore((state) => state.visits)
   const checkAchievements = useAchievementCheck()
   const [nicknameDraft, setNicknameDraft] = useState(animal.nickname ?? '')
   const [justEvolved, setJustEvolved] = useState(false)
@@ -29,6 +34,8 @@ export function AnimalDetailSheet({ animal, onClose }: { animal: AnimalInstance;
     if (!evolvesToId) return
     evolveAnimal(animal.id, evolvesToId)
     setNewAchievements(checkAchievements())
+    playEvolveSound()
+    vibrate([40, 40, 80])
     setJustEvolved(true)
   }
 
@@ -40,6 +47,9 @@ export function AnimalDetailSheet({ animal, onClose }: { animal: AnimalInstance;
       </div>
       <h2 className="sheet-title">{animal.nickname || species.name}</h2>
       <p className="auth-subtitle">Level {animal.level}</p>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+        <MoodDot mood={computeMood(animal, visits)} showLabel />
+      </div>
       <XPBar xp={animal.xp} />
 
       <input
