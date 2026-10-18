@@ -46,9 +46,6 @@ export function SignInScreen() {
         </Button>
       </div>
 
-      {!isGoogleSignInAvailable && (
-        <p className="auth-hint">Google sign-in isn't connected yet — guest mode works fully offline.</p>
-      )}
       {error && <p className="auth-error">{error}</p>}
     </section>
   )
