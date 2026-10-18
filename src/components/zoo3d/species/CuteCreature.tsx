@@ -35,36 +35,36 @@ export function CuteCreature({
         <sphereGeometry args={[0.46, 24, 24]} />
         <meshStandardMaterial color={bodyColor} />
       </mesh>
-      {/* big glossy eyes */}
-      <mesh position={[-0.17, 0.58, 0.49]}>
-        <sphereGeometry args={[0.075, 12, 12]} />
+      {/* small simple dot eyes, closely spaced — not big glossy spheres */}
+      <mesh position={[-0.14, 0.58, 0.49]} scale={[0.8, 1, 0.6]}>
+        <sphereGeometry args={[0.06, 12, 12]} />
         <meshStandardMaterial color="#2C2C2C" />
       </mesh>
-      <mesh position={[0.17, 0.58, 0.49]}>
-        <sphereGeometry args={[0.075, 12, 12]} />
+      <mesh position={[0.14, 0.58, 0.49]} scale={[0.8, 1, 0.6]}>
+        <sphereGeometry args={[0.06, 12, 12]} />
         <meshStandardMaterial color="#2C2C2C" />
       </mesh>
-      <mesh position={[-0.13, 0.62, 0.53]}>
-        <sphereGeometry args={[0.025, 8, 8]} />
+      <mesh position={[-0.11, 0.61, 0.52]}>
+        <sphereGeometry args={[0.018, 8, 8]} />
         <meshStandardMaterial color="#ffffff" />
       </mesh>
-      <mesh position={[0.21, 0.62, 0.53]}>
-        <sphereGeometry args={[0.025, 8, 8]} />
+      <mesh position={[0.17, 0.61, 0.52]}>
+        <sphereGeometry args={[0.018, 8, 8]} />
         <meshStandardMaterial color="#ffffff" />
       </mesh>
       {/* nose */}
-      <mesh position={[0, 0.47, 0.53]}>
-        <sphereGeometry args={[0.045, 8, 8]} />
+      <mesh position={[0, 0.46, 0.53]}>
+        <sphereGeometry args={[0.04, 8, 8]} />
         <meshStandardMaterial color={noseColor} />
       </mesh>
-      {/* blush */}
-      <mesh position={[-0.31, 0.44, 0.34]}>
-        <sphereGeometry args={[0.07, 8, 8]} />
-        <meshStandardMaterial color={blushColor} transparent opacity={0.5} />
+      {/* big prominent blush — bolder than a subtle highlight */}
+      <mesh position={[-0.32, 0.44, 0.32]} scale={[1, 0.75, 0.4]}>
+        <sphereGeometry args={[0.1, 10, 10]} />
+        <meshStandardMaterial color={blushColor} transparent opacity={0.7} />
       </mesh>
-      <mesh position={[0.31, 0.44, 0.34]}>
-        <sphereGeometry args={[0.07, 8, 8]} />
-        <meshStandardMaterial color={blushColor} transparent opacity={0.5} />
+      <mesh position={[0.32, 0.44, 0.32]} scale={[1, 0.75, 0.4]}>
+        <sphereGeometry args={[0.1, 10, 10]} />
+        <meshStandardMaterial color={blushColor} transparent opacity={0.7} />
       </mesh>
     </>
   )
