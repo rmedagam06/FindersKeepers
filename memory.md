@@ -216,12 +216,27 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
 - **Phase 8 (done) — 3D polish, at the user's request ("characters are kind of ugly... the 3d zoo
   has nothing except a single colored circle")**: redesigned all 6 species around the shared
   `CuteCreature` chibi base (see above) and replaced the flat single-circle ground with real
-  per-theme decorations (`ZooDecorations.tsx`) + a two-tone ground + fog. Note: the user referenced
-  "the images uploaded" as a style target, but no new images were actually attached to that
-  message — nothing new exists under `cuteanimals/` either (checked file timestamps). I treated it
-  as referring to that original moodboard folder from Phase 0 and applied general kawaii/chibi
-  proportions; if the user provides real reference images later, re-check this redesign against them.
-- **Phase 9+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
+  per-theme decorations (`ZooDecorations.tsx`) + a two-tone ground + fog.
+- **Phase 9 (done) — flat SVG redesign, same request continued ("characters in the collection are
+  still ugly... make them cute like the images")**: this time I actually used the Read tool to
+  *view* (not just file-list) the `cuteanimals/` moodboard JPGs myself — "Mood panda.jpg" and
+  "Cute animals.jpg" especially. Concrete style rules extracted from them, now the standard for
+  ALL animal art (2D SVG and 3D alike):
+  - Head and body read as **one continuous rounded blob** — they should overlap heavily, not sit
+    as two distinct spheres with a visible neck/waist break.
+  - Eyes are **small simple dark dots/ovals**, closely spaced, with at most a tiny highlight —
+    NOT large glossy spheres (that was the earlier mistake in both the SVGs and `CuteCreature`).
+  - Blush is **big and prominent** — bold pink ellipses on both cheeks, not a subtle tint.
+  - Paws/feet are small rounded shapes that **stay visible** peeking out from under the body —
+    don't hide or omit them (the early 3D attempt's spindly separate legs were also wrong, but the
+    fix is small-and-visible, not absent).
+  - Ears are small, rounded, set at the top corners; flat solid pastel fills throughout; thick
+    consistent navy outline — no gradients/shading.
+  All 12 flat SVGs (`src/assets/animals/*/stage-{1,2}.svg`) were rewritten around these rules, and
+  `CuteCreature.tsx` (the 3D base) was tuned to match (smaller dot eyes, bigger blush). If more art
+  gets redone later, re-view the actual moodboard images first rather than relying on a prior
+  text description of them — that's what caused the first redesign attempt to still miss the mark.
+- **Phase 10+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
   configured, actually rendering a friend's *shared pins* on your map (the data model/toggle exist,
   the map-overlay UI for it doesn't yet) — see plan file for full roadmap
 
