@@ -113,12 +113,24 @@ src/
                               achievement sound/vibration — centralized here, not per call site)
   components/ui/MoodDot.tsx   — the cosmetic mood indicator (colored dot ± label)
   components/zoo3d/           — the 3D zoo, lazy-loaded (see Phase 6 below for why):
-    ZooScene3D.tsx           — Canvas, lighting, ground (themeable), OrbitControls, tap-to-inspect
-                              popup; accepts onCanvasReady(canvas) for snapshot support
-    WanderingAnimal.tsx       — per-animal random-wander movement + bob, via useFrame
+    ZooScene3D.tsx           — Canvas, lighting, two-tone ground (inner terrain + outer ring,
+                              themeable) + fog, OrbitControls, tap-to-inspect popup; accepts
+                              onCanvasReady(canvas) for snapshot support
+    ZooDecorations.tsx        — per-theme fixed-position props (meadow: bushes/flowers/pond; beach:
+                              palm trees/shells; snow: pine trees/snowman) — this is what makes the
+                              yard read as an actual environment, not a flat colored disc
+    WanderingAnimal.tsx       — per-animal random-wander movement + a squash-and-stretch bounce
+                              (wide/flat at the bottom of the hop, tall/thin at the top — not a
+                              plain sine bob), via useFrame
+    species/CuteCreature.tsx  — shared kawaii/chibi base ALL 6 species wrap: big dominant head, big
+                              glossy eyes (pupil+highlight), small mostly-hidden body, blush, NO
+                              legs. Species files just add accent shapes (ears/tail/beak/wings) on
+                              top. This replaced an earlier, more "anatomically literal" per-species
+                              attempt the user explicitly called "ugly" — if touching this again,
+                              keep the head big/dominant and the eyes big; don't drift back toward
+                              smaller heads + visible spindly legs, that's the look that didn't work.
     species/{Panda,Bear,Fox,Owl,Bunny,Otter}3D.tsx — low-poly primitive-built creatures (spheres/
                               cones/cylinders only, no 3D models/assets), same palette as the flat SVGs
-    species/Legs.tsx          — shared 4-leg helper reused by several species
   lib/webgl.ts                — isWebGLAvailable() feature-detection, deliberately dependency-free
                               from three.js so checking support never triggers loading the 3D chunk
   assets/
@@ -201,7 +213,15 @@ vercel.json                 — pins installCommand/buildCommand/outputDirectory
   `claimLocation` code). Tapping "Check in" on any pin always succeeds now — first visit catches,
   every visit after that grants XP, with no limit on how often. This is a deliberate reversal of
   Phase 2's anti-farming design, not a bug — don't re-add gating without being asked again.
-- **Phase 8+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
+- **Phase 8 (done) — 3D polish, at the user's request ("characters are kind of ugly... the 3d zoo
+  has nothing except a single colored circle")**: redesigned all 6 species around the shared
+  `CuteCreature` chibi base (see above) and replaced the flat single-circle ground with real
+  per-theme decorations (`ZooDecorations.tsx`) + a two-tone ground + fog. Note: the user referenced
+  "the images uploaded" as a style target, but no new images were actually attached to that
+  message — nothing new exists under `cuteanimals/` either (checked file timestamps). I treated it
+  as referring to that original moodboard folder from Phase 0 and applied general kawaii/chibi
+  proportions; if the user provides real reference images later, re-check this redesign against them.
+- **Phase 9+**: co-visit XP bonus (explicitly deferred — see below), real FCM push once Firebase is
   configured, actually rendering a friend's *shared pins* on your map (the data model/toggle exist,
   the map-overlay UI for it doesn't yet) — see plan file for full roadmap
 
