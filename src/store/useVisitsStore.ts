@@ -10,10 +10,7 @@ interface VisitsState {
     method: VisitMethod
     rewardGranted: Visit['rewardGranted']
   }) => void
-  countManualVisitsThisWeek: (userId: string) => number
 }
-
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
 export const useVisitsStore = create<VisitsState>()(
   persist(
@@ -29,10 +26,6 @@ export const useVisitsStore = create<VisitsState>()(
           rewardGranted: input.rewardGranted,
         }
         set({ visits: [...get().visits, visit] })
-      },
-      countManualVisitsThisWeek: (userId) => {
-        const cutoff = Date.now() - WEEK_MS
-        return get().visits.filter((v) => v.userId === userId && v.method === 'manual' && v.timestamp >= cutoff).length
       },
     }),
     { name: 'finders-keepers-visits' },
